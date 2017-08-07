@@ -81,6 +81,9 @@ public class Parser {
                         throw new ParseException("Your method must return a primitive (excluding short/byte), a String, or it must be void!");
                     List<Object> list = toObjectList(getVariables(method, line));
                     final Object[] arr = list.toArray(new Object[list.size()]);
+                    for(String str : classes.keySet()) {
+                        System.out.printf("%s || %s", str, classes.get(str));
+                    }
                     m1.invoke(Modifier.isStatic(m1.getModifiers()) ? null : classes.get(m1.getClass().getName()), arr);
                 }
             }
