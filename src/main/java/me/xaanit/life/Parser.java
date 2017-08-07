@@ -17,7 +17,7 @@ import java.util.*;
 public class Parser {
 
     private Set<Object> instances = new HashSet<>();
-    private Map<Class, Object> classes = new HashMap<>();
+    private Map<String, Object> classes = new HashMap<>();
 
     private static final String EMPTY_METHOD = ".+\\(\\)";
     private static final String STRING = "\".+\"";
@@ -36,14 +36,14 @@ public class Parser {
         if (instance == null)
             throw new LifeException("Instance must be the instance of a class!");
         this.instances.add(instance);
-        this.classes.put(instance.getClass(), instance);
+        this.classes.put(instance.getClass().getName(), instance);
         return this;
     }
 
     public Parser register(Object... clazz) {
         this.instances.addAll(Arrays.asList(clazz));
         for (Object o : clazz) {
-            this.classes.put(o.getClass(), o);
+            this.classes.put(o.getClass().getName(), o);
         }
         return this;
     }
@@ -81,7 +81,7 @@ public class Parser {
                         throw new ParseException("Your method must return a primitive (excluding short/byte), a String, or it must be void!");
                     List<Object> list = toObjectList(getVariables(method, line));
                     final Object[] arr = list.toArray(new Object[list.size()]);
-                    m1.invoke(Modifier.isStatic(m1.getModifiers()) ? null : classes.get(m1.getClass()), arr);
+                    m1.invoke(Modifier.isStatic(m1.getModifiers()) ? null : classes.get(m1.getClass().getName()), arr);
                 }
             }
         }
