@@ -51,7 +51,7 @@ Add these to your pom.xml (no elipses, replace `@VERSION@` with the version you'
   	<dependency>
   	    <groupId>com.github.xaanit</groupId>
   	    <artifactId>life</artifactId>
-	      <version>@VERSION@</version>
+	    <version>@VERSION@</version>
   	</dependency>
     ...
   </dependencies>
