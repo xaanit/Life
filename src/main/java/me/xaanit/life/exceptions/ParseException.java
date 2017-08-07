@@ -1,6 +1,6 @@
 package me.xaanit.life.exceptions;
 
-public class ParseException extends RuntimeException {
+public class ParseException extends LifeException {
 
     public ParseException(String msg) {
         super(msg);

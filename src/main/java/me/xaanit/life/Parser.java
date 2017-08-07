@@ -2,6 +2,7 @@ package me.xaanit.life;
 
 import me.xaanit.life.annotations.LifeExecutable;
 import me.xaanit.life.exceptions.IncompatibleFileExtension;
+import me.xaanit.life.exceptions.LifeException;
 import me.xaanit.life.exceptions.ParseException;
 
 import java.io.BufferedReader;
@@ -11,7 +12,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Parameter;
 import java.util.*;
 
 public class Parser {
@@ -22,7 +22,7 @@ public class Parser {
     private static final String EMPTY_METHOD = ".+\\(\\)";
     private static final String STRING = "\".+\"";
     private static final String CHAR = "'.'";
-    private static final String BOOLEAN = "false|true|Flase|True";
+    private static final String BOOLEAN = "false|true|False|True";
     private static final String INT = "-?[0-9]+";
     private static final String DOUBLE = "-?[0-9]+\\.[0-9]+";
     private static final String FLOAT = "-?[0-9]+\\.?[0-9]?[fF]";
@@ -33,6 +33,8 @@ public class Parser {
     }
 
     public Parser register(Object instance) {
+        if (instance == null)
+            throw new LifeException("Instance must be the instance of a class!");
         this.instances.add(instance);
         this.classes.put(instance.getClass(), instance);
         return this;
@@ -62,15 +64,24 @@ public class Parser {
                 for (Object o : instances) {
                     Class clazz = o.getClass();
                     for (Method me : clazz.getMethods()) {
-                        if (me.getName().equals(method) && (me.isAnnotationPresent(LifeExecutable.class)) || me.getClass().isAnnotationPresent(LifeExecutable.class)) {
+                        if (me.getName().equals(method) && me.isAnnotationPresent(LifeExecutable.class)) {
                             m1 = me;
                         }
                     }
                 }
                 if (m1 != null) {
-                        List<Object> list = toObjectList(getVariables(method, line));
-                        final Object[] arr = list.toArray(new Object[list.size()]);
-                        m1.invoke(Modifier.isStatic(m1.getModifiers()) ? null : classes.get(m1.getClass()), arr);
+                    if (!equalsAny(m1.getReturnType(),
+                            String.class,
+                            double.class,
+                            int.class,
+                            float.class,
+                            char.class,
+                            boolean.class,
+                            void.class))
+                        throw new ParseException("Your method must");
+                    List<Object> list = toObjectList(getVariables(method, line));
+                    final Object[] arr = list.toArray(new Object[list.size()]);
+                    m1.invoke(Modifier.isStatic(m1.getModifiers()) ? null : classes.get(m1.getClass()), arr);
                 }
             }
         }
@@ -84,10 +95,11 @@ public class Parser {
         return list;
     }
 
+
     private List<Variable> getVariables(String name, String line) {
         List<Variable> list = new ArrayList<>();
-        line = line.replace(name, "").replace("(", "").replace(")", "");
         if (!line.matches(EMPTY_METHOD)) {
+            line = line.replace(name, "").replace("(", "").replace(")", "");
             String[] variables = line.split(",");
             for (String var : variables) {
                 var = var.trim();
@@ -122,6 +134,7 @@ public class Parser {
     }
 
     private String trimLeadingSpaces(String line) {
+        if (line.isEmpty()) return "";
         while (line.charAt(0) == ' ') line = line.substring(1);
         return line;
     }
@@ -140,18 +153,6 @@ public class Parser {
         execute(res, args);
     }
 
-    private boolean validate(Method m) {
-        for (Parameter p : m.getParameters())
-            if (!equalsAny(p.getClass(),
-                    String.class,
-                    double.class,
-                    int.class,
-                    float.class,
-                    byte.class,
-                    char.class,
-                    boolean.class)) return false;
-        return true;
-    }
 
     private boolean equalsAny(Class clazz, Class... toCheckAgainst) {
         for (Class c : toCheckAgainst)
