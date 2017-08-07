@@ -14,7 +14,7 @@ public class Methods {
   public static void main(String[] args) {
     Parser parser = new Parser();
     parser.register(new Methods());
-    parser.execute("Test.life");
+    parser.execute("Test.life", null);
   }
   
   @LifeExecutable
