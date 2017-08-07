@@ -78,7 +78,7 @@ public class Parser {
                             char.class,
                             boolean.class,
                             void.class))
-                        throw new ParseException("Your method must");
+                        throw new ParseException("Your method must return a primitive (excluding short/byte), a String, or it must be void!");
                     List<Object> list = toObjectList(getVariables(method, line));
                     final Object[] arr = list.toArray(new Object[list.size()]);
                     m1.invoke(Modifier.isStatic(m1.getModifiers()) ? null : classes.get(m1.getClass()), arr);
