@@ -5,6 +5,7 @@ Making your own intepreted language (within reason).
 Todo|Status
 ---|---
 Variables | Not sure how to implement
+Non-static methods | Working on it
 
 It's super easy to use this. See [Test.life](https://github.com/xaanit/Life/blob/master/Test.life) for a sample input.
 
@@ -18,7 +19,7 @@ public class Methods {
   }
   
   @LifeExecutable
-  public void log(String str) {
+  public static void log(String str) {
     System.out.println(str);
   }
  
