@@ -11,7 +11,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.*;
 
 public class Parser {
@@ -58,7 +57,9 @@ public class Parser {
             int index = line.indexOf('(');
             if (line.startsWith("var")) {
                 // do variable stuff
-            } else {
+            } else if (line.startsWith("if")) {//if
+            } else if (line.startsWith("for")) {// for
+            } else if (index != -1) {
                 String method = line.substring(0, index);
                 Method m1 = null;
                 for (Object o : instances) {
@@ -81,10 +82,17 @@ public class Parser {
                         throw new ParseException("Your method must return a primitive (excluding short/byte), a String, or it must be void!");
                     List<Object> list = toObjectList(getVariables(method, line));
                     final Object[] arr = list.toArray(new Object[list.size()]);
-                    for(String str : classes.keySet()) {
-                        System.out.printf("%s || %s", str, classes.get(str));
+                    for (String str : classes.keySet()) {
+                        System.out.printf("%s || %s", str, classes.get(str).getClass().getName());
+                        System.out.println();
+                        System.out.printf(m1.getClass().getName());
+                        System.out.println();
+                        System.out.printf(classes.containsKey(m1.getClass().getName()) + "");
+                        System.out.println();
+                        System.out.printf(str.equals(m1.getClass().getName()) + "");
                     }
-                    m1.invoke(Modifier.isStatic(m1.getModifiers()) ? null : classes.get(m1.getClass().getName()), arr);
+
+                    //m1.invoke(Modifier.isStatic(m1.getModifiers()) ? null : classes.get(m1.getClass().getName()), arr); // For now.
                 }
             }
         }
