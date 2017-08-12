@@ -32,6 +32,12 @@ public class Parser {
     public Parser() {
     }
 
+    /**
+     * Registers a class for methods to run through Life.
+     *
+     * @param instance An instance of the class (i.e <code>new Parser()</code>
+     * @return Itself
+     */
     public Parser register(Object instance) {
         if (instance == null)
             throw new LifeException("Instance must be the instance of a class!");
@@ -40,14 +46,28 @@ public class Parser {
         return this;
     }
 
-    public Parser register(Object... clazz) {
-        this.instances.addAll(Arrays.asList(clazz));
-        for (Object o : clazz) {
+    /**
+     * Registers a number of classes for methods to run through Life.
+     *
+     * @param instances A list of the classes you want to register (i.e <code>new Parser(), new Object()</code>
+     * @return Itself
+     */
+    public Parser register(Object... instances) {
+        this.instances.addAll(Arrays.asList(instances));
+        for (Object o : instances) {
             this.classes.put(o.getClass().getName(), o);
         }
         return this;
     }
 
+    /**
+     * Executes the given code, one line at a time.
+     *
+     * @param lines The lines to execute
+     * @param args  The args.
+     * @throws InvocationTargetException
+     * @throws IllegalAccessException
+     */
     private void execute(List<String> lines, String[] args) throws InvocationTargetException, IllegalAccessException {
         for (String line : lines) {
             if (args != null) {
@@ -72,7 +92,6 @@ public class Parser {
                     }
                 }
                 if (m1 != null) {
-                    m1.getName();
                     if (!equalsAny(m1.getReturnType(),
                             String.class,
                             double.class,
@@ -91,6 +110,12 @@ public class Parser {
     }
 
 
+    /**
+     * Makes a list of variables a list of Objects (for method calling).
+     *
+     * @param vars The variables.
+     * @return The variables, but converted to their Objects.
+     */
     private List<Object> toObjectList(List<Variable> vars) {
         List<Object> list = new ArrayList<>();
         for (Variable var : vars)
@@ -99,6 +124,13 @@ public class Parser {
     }
 
 
+    /**
+     * Gets the variables from a line.
+     *
+     * @param name The name of the method.
+     * @param line The line to look at
+     * @return The list of variables found.
+     */
     private List<Variable> getVariables(String name, String line) {
         List<Variable> list = new ArrayList<>();
         if (!line.matches(EMPTY_METHOD)) {
@@ -136,6 +168,12 @@ public class Parser {
         return list;
     }
 
+    /**
+     * Similar to {@link String#trim()} but for spaces before the line.
+     *
+     * @param line The line to reverse-trim
+     * @return The trimmed line.
+     */
     private String trimLeadingSpaces(String line) {
         if (line.isEmpty()) return "";
         while (line.charAt(0) == ' ') line = line.substring(1);
@@ -143,6 +181,16 @@ public class Parser {
     }
 
 
+    /**
+     * Executes the life file with the specified args.
+     *
+     * @param file The file
+     * @param args The args to provide to the user.
+     * @throws IOException
+     * @throws InvocationTargetException
+     * @throws IllegalAccessException
+     * @throws LifeException             If anything goes wrong.
+     */
     public void execute(File file, String[] args) throws IOException, InvocationTargetException, IllegalAccessException {
         if (!file.getName().endsWith("life"))
             throw new IncompatibleFileExtension("You must pass a .life file!");
@@ -157,6 +205,13 @@ public class Parser {
     }
 
 
+    /**
+     * If a class (unknown) equals any of the following classes.
+     *
+     * @param clazz          The class you want to check
+     * @param toCheckAgainst the classes you want to check against
+     * @return {@code true} if it matches ANY; otherwise {@code false}.
+     */
     private boolean equalsAny(Class clazz, Class... toCheckAgainst) {
         for (Class c : toCheckAgainst)
             if (c == clazz) return true;
