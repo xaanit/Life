@@ -11,14 +11,12 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.*;
 
 @SuppressWarnings("unused")
 public class Parser {
 
-    private Set<Object> instances = new HashSet<>();
-    private Map<String, Object> classes = new HashMap<>();
+    private Set<Class> classes = new HashSet<>();
 
     private static final String EMPTY_METHOD = ".+\\(\\)";
     private static final String STRING = "\".+\"";
@@ -38,28 +36,24 @@ public class Parser {
     /**
      * Registers a class for methods to run through Life.
      *
-     * @param instance An instance of the class (i.e <code>new Parser()</code>
+     * @param clazz An instance of the class (i.e <code>Parser.class</code>
      * @return Itself
      */
-    public Parser register(Object instance) {
-        if (instance == null)
-            throw new LifeException("Instance must be the instance of a class!");
-        this.instances.add(instance);
-        this.classes.put(instance.getClass().getName(), instance);
+    public Parser register(Class clazz) {
+        if (clazz == null)
+            throw new LifeException("Must enter a valid class!");
+        this.classes.add(clazz);
         return this;
     }
 
     /**
      * Registers a number of classes for methods to run through Life.
      *
-     * @param instances A list of the classes you want to register (i.e <code>new Parser(), new Object()</code>
+     * @param clazz A list of the classes you want to register (i.e <code>Parser.class, Object.class</code>
      * @return Itself
      */
-    public Parser register(Object... instances) {
-        this.instances.addAll(Arrays.asList(instances));
-        for (Object o : instances) {
-            this.classes.put(o.getClass().getName(), o);
-        }
+    public Parser register(Class... clazz) {
+        this.classes.addAll(Arrays.asList(clazz));
         return this;
     }
 
@@ -72,13 +66,11 @@ public class Parser {
      * @throws IllegalAccessException
      */
     private void execute(String line, String[] args) throws InvocationTargetException, IllegalAccessException {
-        System.out.println(line + " :: FIRST LINE");
         if (args != null) {
             for (int i = 0; i < args.length; i++) {
                 line = line.replace("args[" + i + "]", args[i]);
             }
         }
-        System.out.println(line + " :: SECOND LINE");
         int index = line.indexOf('(');
         if (line.startsWith("var")) {
             // do variable stuff
@@ -87,22 +79,19 @@ public class Parser {
             int startFrom = -1;
             int goTo = -1;
             try {
-                System.out.println(line + " :: LINE");
-            String temp = line.substring(0, line.indexOf(")") == -1 ? -1 : line.indexOf(")") + 1);
-            if(!temp.matches(FOR)) throw new ParseException("For loop not correct!");
-
+                String temp = line.substring(0, line.indexOf(")") == -1 ? -1 : line.indexOf(")") + 1);
+                if (!temp.matches(FOR)) throw new ParseException("For loop not correct!");
             } catch (NumberFormatException ex) {
                 ex.printStackTrace();
-             //   throw new ParseException("For loop failed! " + ex.getMessage());
+                //   throw new ParseException("For loop failed! " + ex.getMessage());
             } catch (IndexOutOfBoundsException ex) {
                 ex.printStackTrace();
-               // throw new ParseException("Missing an end )!");
+                // throw new ParseException("Missing an end )!");
             }
         } else if (index != -1) {
             String method = line.substring(0, index);
             Method m1 = null;
-            for (Object o : instances) {
-                Class clazz = o.getClass();
+            for (Class clazz : classes) {
                 for (Method me : clazz.getMethods()) {
                     if (me.getName().equals(method) && me.isAnnotationPresent(LifeExecutable.class)) {
                         m1 = me;
@@ -121,7 +110,7 @@ public class Parser {
                     throw new ParseException("Your method must return a primitive (excluding short/byte), a String, or it must be void!");
                 List<Object> list = toObjectList(getVariables(method, line));
                 final Object[] arr = list.toArray(new Object[list.size()]);
-                m1.invoke(Modifier.isStatic(m1.getModifiers()) ? null : classes.get(m1.getDeclaringClass().getName()), arr);
+                m1.invoke(null, arr);
             }
         }
     }

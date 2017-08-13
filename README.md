@@ -5,7 +5,8 @@ Making your own intepreted language (within reason).
 Todo|Status
 ---|---
 Variables | Not sure how to implement
-Non-static methods | Working on it
+If | Planning
+For | Started
 
 It's super easy to use this. See [Test.life](https://github.com/xaanit/Life/blob/master/Test.life) for a sample input.
 
@@ -15,7 +16,7 @@ public class Methods {
   public static void main(String[] args) {
     Parser parser = new Parser();
     parser.register(new Methods());
-    parser.execute("Test.life", null);
+    parser.execute("Test.life", new String[] {"And this prints from args[0]!"});
   }
   
   @LifeExecutable
@@ -26,7 +27,7 @@ public class Methods {
 }
 ```
 
-This will print out `Logging!` to the console, based on the file listed above.
+This will print out `Logging!` to the console (can you guess what else?), based on the file listed above.
 
 # Maven
 
