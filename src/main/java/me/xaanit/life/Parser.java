@@ -14,6 +14,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 
+@SuppressWarnings("unused")
 public class Parser {
 
     private Set<Object> instances = new HashSet<>();
@@ -27,6 +28,8 @@ public class Parser {
     private static final String DOUBLE = "-?[0-9]+\\.[0-9]+";
     private static final String FLOAT = "-?[0-9]+\\.?[0-9]?[fF]";
     private static final String LONG = "-?[0-9]+[Ll]";
+
+    private static final String FOR = "for\\([0-9]+,\\s+[0-9]+\\)";
 
 
     public Parser() {
@@ -61,6 +64,69 @@ public class Parser {
     }
 
     /**
+     * Executes the given code.
+     *
+     * @param line The line to execute
+     * @param args The args.
+     * @throws InvocationTargetException
+     * @throws IllegalAccessException
+     */
+    private void execute(String line, String[] args) throws InvocationTargetException, IllegalAccessException {
+        System.out.println(line + " :: FIRST LINE");
+        if (args != null) {
+            for (int i = 0; i < args.length; i++) {
+                line = line.replace("args[" + i + "]", args[i]);
+            }
+        }
+        System.out.println(line + " :: SECOND LINE");
+        int index = line.indexOf('(');
+        if (line.startsWith("var")) {
+            // do variable stuff
+        } else if (line.startsWith("if")) {//if
+        } else if (line.startsWith("for")) {
+            int startFrom = -1;
+            int goTo = -1;
+            try {
+                System.out.println(line + " :: LINE");
+            String temp = line.substring(0, line.indexOf(")") == -1 ? -1 : line.indexOf(")") + 1);
+            if(!temp.matches(FOR)) throw new ParseException("For loop not correct!");
+
+            } catch (NumberFormatException ex) {
+                ex.printStackTrace();
+             //   throw new ParseException("For loop failed! " + ex.getMessage());
+            } catch (IndexOutOfBoundsException ex) {
+                ex.printStackTrace();
+               // throw new ParseException("Missing an end )!");
+            }
+        } else if (index != -1) {
+            String method = line.substring(0, index);
+            Method m1 = null;
+            for (Object o : instances) {
+                Class clazz = o.getClass();
+                for (Method me : clazz.getMethods()) {
+                    if (me.getName().equals(method) && me.isAnnotationPresent(LifeExecutable.class)) {
+                        m1 = me;
+                    }
+                }
+            }
+            if (m1 != null) {
+                if (!equalsAny(m1.getReturnType(),
+                        String.class,
+                        double.class,
+                        int.class,
+                        float.class,
+                        char.class,
+                        boolean.class,
+                        void.class))
+                    throw new ParseException("Your method must return a primitive (excluding short/byte), a String, or it must be void!");
+                List<Object> list = toObjectList(getVariables(method, line));
+                final Object[] arr = list.toArray(new Object[list.size()]);
+                m1.invoke(Modifier.isStatic(m1.getModifiers()) ? null : classes.get(m1.getDeclaringClass().getName()), arr);
+            }
+        }
+    }
+
+    /**
      * Executes the given code, one line at a time.
      *
      * @param lines The lines to execute
@@ -68,44 +134,9 @@ public class Parser {
      * @throws InvocationTargetException
      * @throws IllegalAccessException
      */
-    private void execute(List<String> lines, String[] args) throws InvocationTargetException, IllegalAccessException {
+    private void execute(List<String> lines, String[] args) throws InvocationTargetException, IllegalAccessException, LifeException {
         for (String line : lines) {
-            if (args != null) {
-                for (int i = 0; i < args.length; i++) {
-                    line = line.replace("args[" + i + "]", args[i]);
-                }
-            }
-            int index = line.indexOf('(');
-            if (line.startsWith("var")) {
-                // do variable stuff
-            } else if (line.startsWith("if")) {//if
-            } else if (line.startsWith("for")) {// for
-            } else if (index != -1) {
-                String method = line.substring(0, index);
-                Method m1 = null;
-                for (Object o : instances) {
-                    Class clazz = o.getClass();
-                    for (Method me : clazz.getMethods()) {
-                        if (me.getName().equals(method) && me.isAnnotationPresent(LifeExecutable.class)) {
-                            m1 = me;
-                        }
-                    }
-                }
-                if (m1 != null) {
-                    if (!equalsAny(m1.getReturnType(),
-                            String.class,
-                            double.class,
-                            int.class,
-                            float.class,
-                            char.class,
-                            boolean.class,
-                            void.class))
-                        throw new ParseException("Your method must return a primitive (excluding short/byte), a String, or it must be void!");
-                    List<Object> list = toObjectList(getVariables(method, line));
-                    final Object[] arr = list.toArray(new Object[list.size()]);
-                    m1.invoke(Modifier.isStatic(m1.getModifiers()) ? null : classes.get(m1.getDeclaringClass().getName()), arr);
-                }
-            }
+            execute(line, args);
         }
     }
 
@@ -141,25 +172,18 @@ public class Parser {
                 var = trimLeadingSpaces(var);
                 if (var.matches(STRING)) {
                     list.add(new Variable(ParameterType.STRING, var.replace("\"", "")));
-                    continue;
                 } else if (var.matches(CHAR)) {
                     list.add(new Variable(ParameterType.CHAR, var));
-                    continue;
                 } else if (var.matches(INT)) {
                     list.add(new Variable(ParameterType.INT, var));
-                    continue;
                 } else if (var.matches(DOUBLE)) {
                     list.add(new Variable(ParameterType.DOUBLE, var));
-                    continue;
                 } else if (var.matches(BOOLEAN)) {
                     list.add(new Variable(ParameterType.BOOLEAN, var));
-                    continue;
                 } else if (var.matches(FLOAT)) {
                     list.add(new Variable(ParameterType.FLOAT, var));
-                    continue;
                 } else if (var.matches(LONG)) {
                     list.add(new Variable(ParameterType.LONG, var));
-                    continue;
                 } else {
                     throw new ParseException("Variables can only be primitives (excluding byte and short) or Strings! Floats must be suffixed with f or F, longs with l or L, chars surrounded by single quotes, and Strings surrounded by double! Var: " + var);
                 }
@@ -218,4 +242,14 @@ public class Parser {
 
         return false;
     }
+
+    private String format(String str, String... strs) {
+        int i = 0;
+        while (str.contains("{}")) {
+            str = str.replaceFirst("\\{\\}", strs[i]);
+            i++;
+        }
+        return str;
+    }
+
 }
