@@ -1,9 +1,11 @@
 package me.xaanit.life;
 
+import jdk.nashorn.internal.runtime.ParserException;
 import me.xaanit.life.annotations.LifeExecutable;
 import me.xaanit.life.exceptions.IncompatibleFileExtension;
 import me.xaanit.life.exceptions.LifeException;
 import me.xaanit.life.exceptions.ParseException;
+import me.xaanit.life.std.lib.ParserEquality;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -12,11 +14,14 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @SuppressWarnings("unused")
 public class Parser {
 
     private Set<Class> classes = new HashSet<>();
+    private Logger logger = Logger.getLogger("Life", "Life");
 
     private static final String EMPTY_METHOD = ".+\\(\\)";
     private static final String STRING = "\".+\"";
@@ -31,6 +36,15 @@ public class Parser {
 
 
     public Parser() {
+        registerStandardLib();
+    }
+
+
+    private final void registerStandardLib() {
+        Class[] classes = {ParserEquality.class};
+        register(classes);
+        logger.log(Level.INFO, "Standard lib init'd.");
+
     }
 
     /**
@@ -111,7 +125,11 @@ public class Parser {
                 List<Object> list = toObjectList(getVariables(method, line));
                 final Object[] arr = list.toArray(new Object[list.size()]);
                 m1.invoke(null, arr);
+            } else {
+                throw new ParserException("Method not valid! Line: " + line);
             }
+        } else {
+            throw new ParseException("Line not valid! Line: " + line);
         }
     }
 
