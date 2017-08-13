@@ -5,7 +5,7 @@ import me.xaanit.life.annotations.LifeExecutable;
 import me.xaanit.life.exceptions.IncompatibleFileExtension;
 import me.xaanit.life.exceptions.LifeException;
 import me.xaanit.life.exceptions.ParseException;
-import me.xaanit.life.std.lib.ParserEquality;
+import me.xaanit.life.stdlib.ParserEquality;
 
 import java.io.BufferedReader;
 import java.io.File;

@@ -1,4 +1,4 @@
-package me.xaanit.life.std.lib;
+package me.xaanit.life.stdlib;
 
 import me.xaanit.life.annotations.LifeExecutable;
 
