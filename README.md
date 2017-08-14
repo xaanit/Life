@@ -5,7 +5,7 @@ Making your own intepreted language (within reason).
 Todo|Status
 ---|---
 If | Planning
-For | Started
+While | Planning
 
 It's super easy to use this. See [Test.life](https://github.com/xaanit/Life/blob/master/Test.life) for a sample input.
 
