@@ -40,6 +40,11 @@ public class Parser {
     private static final String VARIABLE = "var\\s+(.+)\\s+=\\s+(.+)";
     private static final Pattern VARIABLE_PATTERN = Pattern.compile(VARIABLE);
 
+    private static String EDITING_VARIABLE = "(%s)\\s+=\\s+(.+)";
+
+    private int maxWhileRepitions = -1;
+    private int maxForRepitions = -1;
+
 
     public Parser() {
         this(true, null);
@@ -126,86 +131,97 @@ public class Parser {
             if (variables.containsKey(name))
                 throw new ParseException("Variable " + name + " already exists!", lineNumber);
             String typeS = m.group(2);
-            if (typeS.matches(STRING)) {
-                type = ParameterType.STRING;
-
-            } else if (typeS.matches(CHAR)) {
-                type = ParameterType.CHAR;
-
-            } else if (typeS.matches(INT)) {
-                type = ParameterType.INT;
-
-            } else if (typeS.matches(DOUBLE)) {
-                type = ParameterType.DOUBLE;
-
-            } else if (typeS.matches(BOOLEAN)) {
-                type = ParameterType.BOOLEAN;
-
-            } else if (typeS.matches(FLOAT)) {
-                type = ParameterType.FLOAT;
-
-            } else if (typeS.matches(LONG)) {
-                type = ParameterType.LONG;
-
-            } else if (typeS.indexOf("(") != -1) {
-                if (typeS.indexOf(")") == -1)
-                    throw new ParseException("Variables can only be primitives (excluding byte and short) or Strings! Floats must be suffixed with f or F, longs with l or L, chars surrounded by single quotes, and Strings surrounded by double! You can call methods! Var: " + typeS, lineNumber);
-
-                Object called = execute(typeS, args, lineNumber);
-
-                if (called instanceof String) {
-                    type = ParameterType.STRING;
-                    typeS = "\"" + called.toString() + "\"";
-                } else if (called instanceof Double) {
-                    type = ParameterType.DOUBLE;
-                    typeS = called.toString();
-                } else if (called instanceof Float) {
-                    type = ParameterType.FLOAT;
-                    typeS = called.toString() + "F";
-                } else if (called instanceof Character) {
-                    type = ParameterType.CHAR;
-                    typeS = "'" + called.toString() + "'";
-                } else if (called instanceof Integer) {
-                    type = ParameterType.INT;
-                    typeS = called.toString();
-                } else if (called instanceof Long) {
-                    type = ParameterType.LONG;
-                    typeS = called.toString() + "L";
-                } else if (called instanceof Boolean) {
-                    type = ParameterType.BOOLEAN;
-                    typeS = called.toString().toLowerCase();
-                } else {
-                    throw new ParseException("Variables can only be primitives (excluding byte and short) or Strings! Floats must be suffixed with f or F, longs with l or L, chars surrounded by single quotes, and Strings surrounded by double! You can call methods! Var: " + typeS, lineNumber);
-                }
-            } else {
-                throw new ParseException("Variables can only be primitives (excluding byte and short) or Strings! Floats must be suffixed with f or F, longs with l or L, chars surrounded by single quotes, and Strings surrounded by double! You can call methods! Var: " + typeS, lineNumber);
-            }
-
-            UserVariable temp = new UserVariable(type, type == ParameterType.STRING ? typeS.replace("\"", "") : typeS, name);
+            UserVariable temp = getUserVariable(typeS, lineNumber, name, args);
+            variables.put(name, temp);
+        } else if (isEditingVariable(line, lineNumber)) {
+            String name = trimLeadingSpaces(line);
+            name = name.substring(0, name.indexOf(" "));
+            String toEditRegex = String.format(EDITING_VARIABLE, name);
+            Pattern p = Pattern.compile(toEditRegex);
+            Matcher m = p.matcher(line);
+            m.find();
+            name = m.group(1);
+            String typeS = m.group(2);
+            UserVariable temp = getUserVariable(typeS, lineNumber, name, args);
             variables.put(name, temp);
         } else if (line.startsWith("if")) {//if
         } else if (line.startsWith("for")) {
             int startFrom = -1;
             int goTo = -1;
             try {
-                String temp = line.substring(0, line.indexOf(")") == -1 ? -1 : line.indexOf(")") + 1);
+                String temp = line.substring(0, !line.contains(")") ? -1 : line.indexOf(")") + 1);
                 if (!temp.matches(FOR)) throw new ParseException("For loop not correct! Line: " + temp, lineNumber);
+                String[] split = temp.replaceAll("[for\\(\\)\\s]", "").split(",");
+                startFrom = Integer.parseInt(split[0]);
+                goTo = Integer.parseInt(split[1]);
             } catch (NumberFormatException ex) {
-                ex.printStackTrace();
-                //   throw new ParseException("For loop failed! " + ex.getMessage());
+                throw new ParseException("For loop failed! " + ex.getMessage(), lineNumber);
             } catch (IndexOutOfBoundsException ex) {
-                ex.printStackTrace();
-                // throw new ParseException("Missing an end )!");
+                throw new ParseException("Missing an end )!", lineNumber);
+            }
+
+            if (startFrom < goTo && maxForRepitions != 0) {
+                if (goTo - startFrom > maxForRepitions && maxForRepitions != -1)
+                    throw new ParseException("The max for repetitions for this is " + maxForRepitions + ", yours would run " + (goTo - startFrom) + " times.", lineNumber);
+                int foundStarts = 0;
+                int foundEnds = 0;
+                int firstFoundIndex = line.indexOf("<<");
+                if (firstFoundIndex == -1) throw new ParseException("Could not find a starting <<!", lineNumber);
+                int i = 0;
+                while (true) {
+                    try {
+                        String temp = line.substring(i, i + 2);
+                        if (temp.equals("<<"))
+                            foundStarts++;
+                        else if (temp.equals(">>"))
+                            foundEnds++;
+                        i++;
+                    } catch (IndexOutOfBoundsException ex) {
+                        break;
+                    }
+                }
+                int lastFoundIndex = line.lastIndexOf(">>");
+                if (foundStarts != foundEnds)
+                    throw new ParseException("Found a mismatched amount of <<'s and >>'s! Found " + foundStarts + " <<'s and " + foundEnds + " >>'s.", lineNumber);
+                String exe = trimLeadingSpaces(line.substring(firstFoundIndex + 2, lastFoundIndex).trim());
+                for (int goFrom = startFrom; goFrom < goTo; goFrom++)
+                    execute(exe, args, lineNumber);
             }
         } else if (index != -1) {
             String method = line.substring(0, index);
             Method m1 = null;
+            List<Variable> variables = getVariables(method, line, lineNumber);
             for (Class clazz : classes) {
                 for (Method me : clazz.getMethods()) {
                     if (me.getName().equals(method) && me.isAnnotationPresent(LifeExecutable.class)) {
+                        /**          List<String> foundUserVars = new ArrayList<>();
+                         List<String> foundDevVars = new ArrayList<>();
+
+                         for (Variable v : variables) foundUserVars.add(v.getType().toString().toLowerCase());
+
+                         for (Parameter p : me.getParameters())
+                         foundDevVars.add(p.getType().getName().toLowerCase().contains("string") ? "string" : p.getType().getName().toLowerCase());
+
+                         System.out.println(foundUserVars);
+                         System.out.println(foundDevVars);
+
+                         if (foundUserVars.size() != foundDevVars.size()) {
+                         System.out.println(String.format("SIZE MISMATCH, USER %s DEV %s", foundUserVars.size(), foundDevVars.size()));
+                         continue;
+                         }
+                         for (int i = 0; i < foundUserVars.size(); i++)
+                         if (!foundUserVars.get(i).equals(foundDevVars.get(i))) {
+                         System.out.println("DO NOT MATCH. FOUND " + foundUserVars.get(i) + " IN USER VARS AND " + foundDevVars.get(i) + " AT DEV VARS AT POS " + i);
+                         continue;
+                         }
+                         System.out.println("FOUND BOTH OF THE SAME.");
+                         */
                         m1 = me;
+                        break;
                     }
                 }
+                if (m1 != null)
+                    break;
             }
             if (m1 != null) {
                 if (!equalsAny(m1.getReturnType(),
@@ -217,7 +233,7 @@ public class Parser {
                         boolean.class,
                         void.class))
                     throw new ParseException("Your method must return a primitive (excluding short/byte), a String, or it must be void!", lineNumber);
-                List<Object> list = toObjectList(getVariables(method, line, lineNumber));
+                List<Object> list = toObjectList(variables);
                 final Object[] arr = list.toArray(new Object[list.size()]);
                 return m1.invoke(null, arr);
             } else {
@@ -226,7 +242,6 @@ public class Parser {
         } else {
             throw new ParseException("Line not valid! Line: " + line, lineNumber);
         }
-        System.out.println("Idk how you got here.");
         return null; // I have no idea if it can get here. I'll be surprised if it does.
     }
 
@@ -238,6 +253,7 @@ public class Parser {
      * @throws InvocationTargetException
      * @throws IllegalAccessException
      */
+
     private void execute(List<String> lines, String[] args) throws InvocationTargetException, IllegalAccessException, LifeException {
         int i = 0;
         for (String line : lines) {
@@ -259,6 +275,97 @@ public class Parser {
         for (Variable var : vars)
             list.add(var.convert());
         return list;
+    }
+
+    /**
+     * Gets the user variable.
+     *
+     * @param typeS      The info to check
+     * @param lineNumber The line number, for exceptions
+     * @return The user variable based on the info found.
+     */
+    private UserVariable getUserVariable(String typeS, int lineNumber, String name, String[] args) throws IllegalAccessException, InvocationTargetException {
+        ParameterType type;
+        if (typeS.matches(STRING)) {
+            type = ParameterType.STRING;
+
+        } else if (typeS.matches(CHAR)) {
+            type = ParameterType.CHAR;
+
+        } else if (typeS.matches(INT)) {
+            type = ParameterType.INT;
+
+        } else if (typeS.matches(DOUBLE)) {
+            type = ParameterType.DOUBLE;
+
+        } else if (typeS.matches(BOOLEAN)) {
+            type = ParameterType.BOOLEAN;
+
+        } else if (typeS.matches(FLOAT)) {
+            type = ParameterType.FLOAT;
+
+        } else if (typeS.matches(LONG)) {
+            type = ParameterType.LONG;
+
+        } else if (typeS.indexOf("(") != -1) {
+            if (typeS.indexOf(")") == -1)
+                throw new ParseException("Variables can only be primitives (excluding byte and short) or Strings! Floats must be suffixed with f or F, longs with l or L, chars surrounded by single quotes, and Strings surrounded by double! You can call methods! Var: " + typeS, lineNumber);
+
+
+            Object called = execute(typeS, args, lineNumber);
+
+            if (called instanceof String) {
+                type = ParameterType.STRING;
+                typeS = "\"" + called.toString() + "\"";
+            } else if (called instanceof Double) {
+                type = ParameterType.DOUBLE;
+                typeS = called.toString();
+            } else if (called instanceof Float) {
+                type = ParameterType.FLOAT;
+                typeS = called.toString() + "F";
+            } else if (called instanceof Character) {
+                type = ParameterType.CHAR;
+                typeS = "'" + called.toString() + "'";
+            } else if (called instanceof Integer) {
+                type = ParameterType.INT;
+                typeS = called.toString();
+            } else if (called instanceof Long) {
+                type = ParameterType.LONG;
+                typeS = called.toString() + "L";
+            } else if (called instanceof Boolean) {
+                type = ParameterType.BOOLEAN;
+                typeS = called.toString().toLowerCase();
+            } else if (called == null) {
+                throw new ParseException("Void methods can not be used in variables!", lineNumber);
+            } else {
+                throw new ParseException("Variables can only be primitives (excluding byte and short) or Strings! Floats must be suffixed with f or F, longs with l or L, chars surrounded by single quotes, and Strings surrounded by double! You can call methods! Var: " + typeS, lineNumber);
+            }
+        } else {
+            throw new ParseException("Variables can only be primitives (excluding byte and short) or Strings! Floats must be suffixed with f or F, longs with l or L, chars surrounded by single quotes, and Strings surrounded by double! You can call methods! Var: " + typeS, lineNumber);
+        }
+        return new UserVariable(type, type == ParameterType.STRING ? typeS.replace("\"", "") : typeS, name);
+    }
+
+    /**
+     * Checks to see if the line is the start of a variable manipulation
+     *
+     * @param line       The line to check
+     * @param lineNumber The line number, for exceptions
+     * @return {@code true} if it is; otherwise {@code false}
+     */
+    private boolean isEditingVariable(String line, int lineNumber) {
+        if (line.indexOf("=") == -1 || line.startsWith("if") || line.startsWith("for"))
+            return false;
+        line = trimLeadingSpaces(line);
+        try {
+            line = line.substring(0, line.indexOf(" "));
+        } catch (IndexOutOfBoundsException ex) {
+            throw new ParseException("Invalid line: " + line, lineNumber);
+        }
+        for (String key : variables.keySet())
+            if (line.equals(key))
+                return true;
+        return false;
     }
 
 
@@ -291,8 +398,6 @@ public class Parser {
                     list.add(new Variable(ParameterType.FLOAT, var));
                 } else if (var.matches(LONG)) {
                     list.add(new Variable(ParameterType.LONG, var));
-                } else {
-                    throw new ParseException("Variables can only be primitives (excluding byte and short) or Strings! Floats must be suffixed with f or F, longs with l or L, chars surrounded by single quotes, and Strings surrounded by double! Var: " + var, lineNumber);
                 }
             }
         }
@@ -371,4 +476,33 @@ public class Parser {
         return str;
     }
 
+    public int getMaxWhileRepitions() {
+        return maxWhileRepitions;
+    }
+
+    /**
+     * Sets the max amount of times a while loop can run. -1 for infinite. 0 for never.
+     *
+     * @param maxWhileRepitions The max amount of times a while loop can execute before exiting.
+     */
+    public void setMaxWhileRepitions(int maxWhileRepitions) {
+        if (maxWhileRepitions < 0)
+            maxWhileRepitions = -1;
+        this.maxWhileRepitions = maxWhileRepitions;
+    }
+
+    public int getMaxForRepitions() {
+        return maxForRepitions;
+    }
+
+    /**
+     * Sets the max amount of times a for loop can run. -1 for infinite. 0 for never. If the number of times the for loop will run exceeds this, an error will be thrown.
+     *
+     * @param maxForRepitions The max amount of times a for loop can run.
+     */
+    public void setMaxForRepitions(int maxForRepitions) {
+        if (maxForRepitions < 0)
+            maxForRepitions = -1;
+        this.maxForRepitions = maxForRepitions;
+    }
 }
