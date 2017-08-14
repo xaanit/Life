@@ -4,7 +4,6 @@ Making your own intepreted language (within reason).
 
 Todo|Status
 ---|---
-Variables | Not sure how to implement
 If | Planning
 For | Started
 

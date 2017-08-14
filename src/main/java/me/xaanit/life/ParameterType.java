@@ -7,5 +7,6 @@ public enum ParameterType {
     FLOAT,
     LONG,
     INT,
-    BOOLEAN
+    BOOLEAN,
+    VOID // Honestly should only be used once.
 }

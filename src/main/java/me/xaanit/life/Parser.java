@@ -1,10 +1,10 @@
 package me.xaanit.life;
 
-import jdk.nashorn.internal.runtime.ParserException;
 import me.xaanit.life.annotations.LifeExecutable;
 import me.xaanit.life.exceptions.IncompatibleFileExtension;
 import me.xaanit.life.exceptions.LifeException;
 import me.xaanit.life.exceptions.ParseException;
+import me.xaanit.life.stdlib.ParserAddition;
 import me.xaanit.life.stdlib.ParserEquality;
 
 import java.io.BufferedReader;
@@ -16,12 +16,15 @@ import java.lang.reflect.Method;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @SuppressWarnings("unused")
 public class Parser {
 
     private Set<Class> classes = new HashSet<>();
-    private Logger logger = Logger.getLogger("Life", "Life");
+    private static final Logger logger = Logger.getLogger("Life");
+    private Map<String, UserVariable> variables = new HashMap<>();
 
     private static final String EMPTY_METHOD = ".+\\(\\)";
     private static final String STRING = "\".+\"";
@@ -34,16 +37,34 @@ public class Parser {
 
     private static final String FOR = "for\\([0-9]+,\\s+[0-9]+\\)";
 
+    private static final String VARIABLE = "var\\s+(.+)\\s+=\\s+(.+)";
+    private static final Pattern VARIABLE_PATTERN = Pattern.compile(VARIABLE);
+
 
     public Parser() {
-        registerStandardLib();
+        this(true, null);
+    }
+
+    public Parser(boolean registerStandardLibrary) {
+        this(registerStandardLibrary, null);
+    }
+
+    public Parser(boolean registerStandardLibrary, Class[] notToRegister) {
+        if (registerStandardLibrary) registerStandardLib(notToRegister);
+
     }
 
 
-    private final void registerStandardLib() {
-        Class[] classes = {ParserEquality.class};
-        register(classes);
-        logger.log(Level.INFO, "Standard lib init'd.");
+    private final void registerStandardLib(Class[] clazz) {
+        final Class[] classes = {ParserEquality.class, ParserAddition.class};
+        for (Class c : classes) {
+            boolean register = true;
+            if (clazz != null)
+                register = !equalsAny(c, clazz);
+            if (register)
+                register(c);
+        }
+        logger.log(Level.INFO, "[Life] Standard lib init'd.");
 
     }
 
@@ -79,22 +100,96 @@ public class Parser {
      * @throws InvocationTargetException
      * @throws IllegalAccessException
      */
-    private void execute(String line, String[] args) throws InvocationTargetException, IllegalAccessException {
+    private Object execute(String line, String[] args, int lineNumber) throws InvocationTargetException, IllegalAccessException {
         if (args != null) {
             for (int i = 0; i < args.length; i++) {
                 line = line.replace("args[" + i + "]", args[i]);
             }
         }
+
+        for (UserVariable v : variables.values()) {
+            String temp;
+            if (v.getType() == ParameterType.STRING)
+                temp = "\"" + v.getInfo() + "\"";
+            else
+                temp = v.getInfo();
+            line = line.replace("{" + v.getName() + "}", temp);
+        }
         int index = line.indexOf('(');
         if (line.startsWith("var")) {
-            // do variable stuff
+            if (!line.matches(VARIABLE))
+                throw new ParseException("Variable needs to be formatted as: var name = info\nYou formatted it as: " + line, lineNumber);
+            Matcher m = VARIABLE_PATTERN.matcher(line);
+            m.find();
+            ParameterType type;
+            String name = m.group(1);
+            if (variables.containsKey(name))
+                throw new ParseException("Variable " + name + " already exists!", lineNumber);
+            String typeS = m.group(2);
+            if (typeS.matches(STRING)) {
+                type = ParameterType.STRING;
+
+            } else if (typeS.matches(CHAR)) {
+                type = ParameterType.CHAR;
+
+            } else if (typeS.matches(INT)) {
+                type = ParameterType.INT;
+
+            } else if (typeS.matches(DOUBLE)) {
+                type = ParameterType.DOUBLE;
+
+            } else if (typeS.matches(BOOLEAN)) {
+                type = ParameterType.BOOLEAN;
+
+            } else if (typeS.matches(FLOAT)) {
+                type = ParameterType.FLOAT;
+
+            } else if (typeS.matches(LONG)) {
+                type = ParameterType.LONG;
+
+            } else if (typeS.indexOf("(") != -1) {
+                if (typeS.indexOf(")") == -1)
+                    throw new ParseException("Variables can only be primitives (excluding byte and short) or Strings! Floats must be suffixed with f or F, longs with l or L, chars surrounded by single quotes, and Strings surrounded by double! You can call methods! Var: " + typeS, lineNumber);
+
+                Object called = execute(typeS, args, lineNumber);
+
+                if (called instanceof String) {
+                    type = ParameterType.STRING;
+                    typeS = "\"" + called.toString() + "\"";
+                } else if (called instanceof Double) {
+                    type = ParameterType.DOUBLE;
+                    typeS = called.toString();
+                } else if (called instanceof Float) {
+                    type = ParameterType.FLOAT;
+                    typeS = called.toString() + "F";
+                } else if (called instanceof Character) {
+                    type = ParameterType.CHAR;
+                    typeS = "'" + called.toString() + "'";
+                } else if (called instanceof Integer) {
+                    type = ParameterType.INT;
+                    typeS = called.toString();
+                } else if (called instanceof Long) {
+                    type = ParameterType.LONG;
+                    typeS = called.toString() + "L";
+                } else if (called instanceof Boolean) {
+                    type = ParameterType.BOOLEAN;
+                    typeS = called.toString().toLowerCase();
+                } else {
+                    throw new ParseException("Variables can only be primitives (excluding byte and short) or Strings! Floats must be suffixed with f or F, longs with l or L, chars surrounded by single quotes, and Strings surrounded by double! You can call methods! Var: " + typeS, lineNumber);
+                }
+            } else {
+                throw new ParseException("Variables can only be primitives (excluding byte and short) or Strings! Floats must be suffixed with f or F, longs with l or L, chars surrounded by single quotes, and Strings surrounded by double! You can call methods! Var: " + typeS, lineNumber);
+            }
+
+            UserVariable temp = new UserVariable(type, type == ParameterType.STRING ? typeS.replace("\"", "") : typeS, name);
+            variables.put(name, temp);
         } else if (line.startsWith("if")) {//if
         } else if (line.startsWith("for")) {
             int startFrom = -1;
             int goTo = -1;
             try {
                 String temp = line.substring(0, line.indexOf(")") == -1 ? -1 : line.indexOf(")") + 1);
-                if (!temp.matches(FOR)) throw new ParseException("For loop not correct!");
+                if (!temp.matches(FOR)) throw new ParseException("For loop not correct! Line: " + temp, lineNumber);
             } catch (NumberFormatException ex) {
                 ex.printStackTrace();
                 //   throw new ParseException("For loop failed! " + ex.getMessage());
@@ -121,16 +216,18 @@ public class Parser {
                         char.class,
                         boolean.class,
                         void.class))
-                    throw new ParseException("Your method must return a primitive (excluding short/byte), a String, or it must be void!");
-                List<Object> list = toObjectList(getVariables(method, line));
+                    throw new ParseException("Your method must return a primitive (excluding short/byte), a String, or it must be void!", lineNumber);
+                List<Object> list = toObjectList(getVariables(method, line, lineNumber));
                 final Object[] arr = list.toArray(new Object[list.size()]);
-                m1.invoke(null, arr);
+                return m1.invoke(null, arr);
             } else {
-                throw new ParserException("Method not valid! Line: " + line);
+                throw new ParseException("Method not valid! Line: " + line, lineNumber);
             }
         } else {
-            throw new ParseException("Line not valid! Line: " + line);
+            throw new ParseException("Line not valid! Line: " + line, lineNumber);
         }
+        System.out.println("Idk how you got here.");
+        return null; // I have no idea if it can get here. I'll be surprised if it does.
     }
 
     /**
@@ -142,8 +239,11 @@ public class Parser {
      * @throws IllegalAccessException
      */
     private void execute(List<String> lines, String[] args) throws InvocationTargetException, IllegalAccessException, LifeException {
+        int i = 0;
         for (String line : lines) {
-            execute(line, args);
+            i++;
+            if (!line.isEmpty())
+                execute(line, args, i);
         }
     }
 
@@ -169,10 +269,10 @@ public class Parser {
      * @param line The line to look at
      * @return The list of variables found.
      */
-    private List<Variable> getVariables(String name, String line) {
+    private List<Variable> getVariables(String name, String line, int lineNumber) {
         List<Variable> list = new ArrayList<>();
         if (!line.matches(EMPTY_METHOD)) {
-            line = line.replace(name, "").replace("(", "").replace(")", "");
+            line = line.substring(name.length()).replace("(", "").replace(")", "");
             String[] variables = line.split(",");
             for (String var : variables) {
                 var = var.trim();
@@ -192,7 +292,7 @@ public class Parser {
                 } else if (var.matches(LONG)) {
                     list.add(new Variable(ParameterType.LONG, var));
                 } else {
-                    throw new ParseException("Variables can only be primitives (excluding byte and short) or Strings! Floats must be suffixed with f or F, longs with l or L, chars surrounded by single quotes, and Strings surrounded by double! Var: " + var);
+                    throw new ParseException("Variables can only be primitives (excluding byte and short) or Strings! Floats must be suffixed with f or F, longs with l or L, chars surrounded by single quotes, and Strings surrounded by double! Var: " + var, lineNumber);
                 }
             }
         }
@@ -225,6 +325,17 @@ public class Parser {
     public void execute(File file, String[] args) throws IOException, InvocationTargetException, IllegalAccessException {
         if (!file.getName().endsWith("life"))
             throw new IncompatibleFileExtension("You must pass a .life file!");
+        for (int i = 0; i < args.length; i++) {
+            args[i] = args[i].replace("\"", "");
+            args[i] = !args[i].matches(CHAR)
+                    && !args[i].matches(INT)
+                    && !args[i].matches(DOUBLE)
+                    && !args[i].matches(LONG)
+                    && !args[i].matches(FLOAT)
+                    && !args[i].matches(BOOLEAN)
+                    ? "\"" + args[i] + "\""
+                    : args[i];
+        }
         FileReader fr = new FileReader(file);
         BufferedReader br = new BufferedReader(fr);
         List<String> res = new ArrayList<>();
@@ -232,6 +343,7 @@ public class Parser {
         while ((line = br.readLine()) != null) res.add(line);
         br.close();
         fr.close();
+        this.variables.clear();
         execute(res, args);
     }
 

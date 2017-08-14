@@ -29,6 +29,14 @@ public class Variable {
         }
     }
 
+    public String getInfo() {
+        return this.info;
+    }
+
+    public ParameterType getType() {
+        return this.type;
+    }
+
     @Override
     public String toString() {
         return "Variable{" +
