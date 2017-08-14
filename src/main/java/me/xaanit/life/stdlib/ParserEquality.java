@@ -42,6 +42,8 @@ public class ParserEquality {
 
     @LifeExecutable
     public static boolean equals(String arg1, String arg2, boolean ignoreCase) {
+        if (arg1 == null || arg2 == null)
+            return arg1 == null && arg2 == null;
         return ignoreCase ? arg1.equalsIgnoreCase(arg2) : arg1.equals(arg2);
     }
 
