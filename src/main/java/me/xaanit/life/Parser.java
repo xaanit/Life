@@ -14,6 +14,9 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -42,8 +45,16 @@ public class Parser {
 
     private static String EDITING_VARIABLE = "(%s)\\s+=\\s+(.+)";
 
-    private int maxWhileRepitions = -1;
-    private int maxForRepitions = -1;
+    private int maxWhileRepetitions = -1;
+    private int maxForRepetitions = -1;
+
+    private static ExecutorService parserService = Executors.newFixedThreadPool(
+            ForkJoinPool.getCommonPoolParallelism(), r -> {
+                Thread thread = new Thread(r);
+                thread.setDaemon(true);
+                thread.setName("LifeParser");
+                return thread;
+            });
 
 
     public Parser() {
@@ -112,6 +123,8 @@ public class Parser {
             }
         }
 
+        line = line.replaceAll("\\/\\/.+", "").replaceAll("\\/\\/", "").replaceAll("\\/\\*.+\\*\\/", ""); // Comments
+
         for (UserVariable v : variables.values()) {
             String temp;
             if (v.getType() == ParameterType.STRING)
@@ -146,8 +159,8 @@ public class Parser {
             variables.put(name, temp);
         } else if (line.startsWith("if")) {//if
         } else if (line.startsWith("for")) {
-            int startFrom = -1;
-            int goTo = -1;
+            int startFrom;
+            int goTo;
             try {
                 String temp = line.substring(0, !line.contains(")") ? -1 : line.indexOf(")") + 1);
                 if (!temp.matches(FOR)) throw new ParseException("For loop not correct! Line: " + temp, lineNumber);
@@ -160,9 +173,9 @@ public class Parser {
                 throw new ParseException("Missing an end )!", lineNumber);
             }
 
-            if (startFrom < goTo && maxForRepitions != 0) {
-                if (goTo - startFrom > maxForRepitions && maxForRepitions != -1)
-                    throw new ParseException("The max for repetitions for this is " + maxForRepitions + ", yours would run " + (goTo - startFrom) + " times.", lineNumber);
+            if (startFrom < goTo && maxForRepetitions != 0) {
+                if (goTo - startFrom > maxForRepetitions && maxForRepetitions != -1)
+                    throw new ParseException("The max for repetitions for this is " + maxForRepetitions + ", yours would run " + (goTo - startFrom) + " times.", lineNumber);
                 int foundStarts = 0;
                 int foundEnds = 0;
                 int firstFoundIndex = line.indexOf("<<");
@@ -258,7 +271,7 @@ public class Parser {
         int i = 0;
         for (String line : lines) {
             i++;
-            if (!line.isEmpty())
+            if (!line.isEmpty() && !line.startsWith("//"))
                 execute(line, args, i);
         }
     }
@@ -385,7 +398,7 @@ public class Parser {
                 var = var.trim();
                 var = trimLeadingSpaces(var);
                 if (var.matches(STRING)) {
-                    list.add(new Variable(ParameterType.STRING, var.replace("\"", "")));
+                    list.add(new Variable(ParameterType.STRING, var.substring(1, var.length() - 1)));
                 } else if (var.matches(CHAR)) {
                     list.add(new Variable(ParameterType.CHAR, var));
                 } else if (var.matches(INT)) {
@@ -476,33 +489,37 @@ public class Parser {
         return str;
     }
 
-    public int getMaxWhileRepitions() {
-        return maxWhileRepitions;
+    public int getMaxWhileRepetitions() {
+        return maxWhileRepetitions;
     }
 
     /**
      * Sets the max amount of times a while loop can run. -1 for infinite. 0 for never.
      *
-     * @param maxWhileRepitions The max amount of times a while loop can execute before exiting.
+     * @param maxWhileRepetitions The max amount of times a while loop can execute before exiting.
      */
-    public void setMaxWhileRepitions(int maxWhileRepitions) {
-        if (maxWhileRepitions < 0)
-            maxWhileRepitions = -1;
-        this.maxWhileRepitions = maxWhileRepitions;
+    public void setMaxWhileRepetitions(int maxWhileRepetitions) {
+        if (maxWhileRepetitions < 0)
+            maxWhileRepetitions = -1;
+        this.maxWhileRepetitions = maxWhileRepetitions;
     }
 
-    public int getMaxForRepitions() {
-        return maxForRepitions;
+    public int getMaxForRepetitions() {
+        return maxForRepetitions;
     }
 
     /**
      * Sets the max amount of times a for loop can run. -1 for infinite. 0 for never. If the number of times the for loop will run exceeds this, an error will be thrown.
      *
-     * @param maxForRepitions The max amount of times a for loop can run.
+     * @param maxForRepetitions The max amount of times a for loop can run.
      */
-    public void setMaxForRepitions(int maxForRepitions) {
-        if (maxForRepitions < 0)
-            maxForRepitions = -1;
-        this.maxForRepitions = maxForRepitions;
+    public void setMaxForRepetitions(int maxForRepetitions) {
+        if (maxForRepetitions < 0)
+            maxForRepetitions = -1;
+        this.maxForRepetitions = maxForRepetitions;
+    }
+
+    public static void async(Runnable r) {
+        parserService.execute(r);
     }
 }
