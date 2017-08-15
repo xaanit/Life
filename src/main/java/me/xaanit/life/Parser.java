@@ -43,10 +43,10 @@ public class Parser {
     private static final String VARIABLE = "var\\s+([a-zA-Z]+)\\s+=\\s+(.+)";
     private static final Pattern VARIABLE_PATTERN = Pattern.compile(VARIABLE);
 
-    private static String EDITING_VARIABLE = "(%s)\\s+=\\s+(.+)";
+    private static final String EDITING_VARIABLE = "(%s)\\s+=\\s+(.+)";
 
-    private static final String IF_METHOD = "if\\(!?((.+?)\\((.*)\\))\\)";
-    private static final String IF_VARIABLE = "if\\(!?{(.+)}\\)";
+    private static final String IF_OR_WHILE_METHOD = "%s\\(!?((.+?)\\((.*)\\))\\)";
+    private static final String IF_OR_WHILE_VARIABLE = "%s\\(!?(.+)\\)";
 
     private int maxWhileRepetitions = -1;
     private int maxForRepetitions = -1;
@@ -161,8 +161,63 @@ public class Parser {
             UserVariable temp = getUserVariable(typeS, lineNumber, name, args);
             variables.put(name, temp);
         } else if (line.startsWith("if")) {//if
-            String findMethod;
+            int indexOfIf = line.indexOf("<");
+            if (indexOfIf == -1) throw new ParseException("If statment invalid!", lineNumber);
+            String find = trimLeadingSpaces(line.substring(0, indexOfIf).trim());
+            boolean cont;
+            boolean shouldBeFalse = find.charAt(3) == '!';
+            if (find.matches(String.format(IF_OR_WHILE_METHOD, "if"))) {
+                Pattern p = Pattern.compile(String.format(IF_OR_WHILE_METHOD, "if"));
+                Matcher m = p.matcher(find);
+                m.find();
+                Object o = execute(m.group(1), args, lineNumber);
+                if (!(o instanceof Boolean))
+                    throw new ParseException("Methods in if statements can only be booleans!", lineNumber);
+                boolean b = (boolean) o;
+                cont = shouldBeFalse ? !b : b;
+            } else if (find.matches(String.format(IF_OR_WHILE_VARIABLE, "if"))) {
+                Pattern p = Pattern.compile(String.format(IF_OR_WHILE_VARIABLE, "if"));
+                Matcher m = p.matcher(find);
+                m.find();
+                String var = m.group(1);
+                boolean b = var.matches(BOOLEAN) && var.equalsIgnoreCase("true");
+                cont = shouldBeFalse ? !b : b;
+            } else {
+                throw new ParseException("Invalid token in if statement!", lineNumber);
+            }
 
+            if (cont) {
+                int foundStarts = 0;
+                int foundEnds = 0;
+                int firstFoundIndex = -2;
+                int lastFoundIndex = -2;
+                int i = 0;
+                while (true) {
+                    try {
+                        char a = i == 0 ? ' ' : line.charAt(i - 1);
+                        char b = line.charAt(i);
+                        char c = i == line.length() - 1 ? ' ' : line.charAt(i + 1);
+
+                        if (b == '<' && (a != '<') && (c != '<')) {
+                            foundStarts++;
+                            if (firstFoundIndex == -2)
+                                firstFoundIndex = i;
+                        } else if (b == '>' && (a != '>') && (c != '>')) {
+                            foundEnds++;
+                            lastFoundIndex = i;
+                        }
+                        i++;
+                    } catch (IndexOutOfBoundsException ex) {
+                        break;
+                    }
+                }
+
+                if (foundStarts != foundEnds)
+                    throw new ParseException("Found a mismatched amount of <'s and >'s! Found " + foundStarts + " <'s and " + foundEnds + " >'s.", lineNumber);
+
+                String exe = trimLeadingSpaces(line.substring(firstFoundIndex + 1, lastFoundIndex).trim());
+                execute(exe, args, lineNumber);
+            }
         } else if (line.startsWith("while")) { // while
         } else if (line.startsWith("for")) {
             int startFrom;
@@ -209,11 +264,11 @@ public class Parser {
         } else if (index != -1) {
             String method = line.substring(0, index);
             Method m1 = null;
-            List<Variable> variables = getVariables(method, line, lineNumber);
+            List<Variable> variables = getVariables(method, line, args, lineNumber);
             for (Class clazz : classes) {
                 for (Method me : clazz.getMethods()) {
                     if (me.getName().equals(method) && me.isAnnotationPresent(LifeExecutable.class)) {
-                        /**          List<String> foundUserVars = new ArrayList<>();
+                        /*          List<String> foundUserVars = new ArrayList<>();
                          List<String> foundDevVars = new ArrayList<>();
 
                          for (Variable v : variables) foundUserVars.add(v.getType().toString().toLowerCase());
@@ -395,7 +450,8 @@ public class Parser {
      * @param line The line to look at
      * @return The list of variables found.
      */
-    private List<Variable> getVariables(String name, String line, int lineNumber) {
+    private List<Variable> getVariables(String name, String line, String[] args, int lineNumber) throws InvocationTargetException, IllegalAccessException {
+        final String METHOD = ".+\\(.*\\)";
         List<Variable> list = new ArrayList<>();
         if (!line.matches(EMPTY_METHOD)) {
             line = line.substring(name.length()).replace("(", "").replace(")", "");
@@ -403,6 +459,10 @@ public class Parser {
             for (String var : variables) {
                 var = var.trim();
                 var = trimLeadingSpaces(var);
+                Object o = null;
+                if (var.matches(METHOD)) {
+                    o = execute(var, args, lineNumber);
+                }
                 if (var.matches(STRING)) {
                     list.add(new Variable(ParameterType.STRING, var));
                 } else if (var.matches(CHAR)) {
@@ -417,6 +477,20 @@ public class Parser {
                     list.add(new Variable(ParameterType.FLOAT, var));
                 } else if (var.matches(LONG)) {
                     list.add(new Variable(ParameterType.LONG, var));
+                } else if (o != null && o instanceof String) {
+                    list.add(new Variable(ParameterType.STRING, o.toString()));
+                } else if (o != null && o instanceof Character) {
+                    list.add(new Variable(ParameterType.CHAR, o.toString()));
+                } else if (o != null && o instanceof Integer) {
+                    list.add(new Variable(ParameterType.INT, o.toString()));
+                } else if (o != null && o instanceof Double) {
+                    list.add(new Variable(ParameterType.DOUBLE, o.toString()));
+                } else if (o != null && o instanceof Boolean) {
+                    list.add(new Variable(ParameterType.BOOLEAN, o.toString()));
+                } else if (o != null && o instanceof Float) {
+                    list.add(new Variable(ParameterType.FLOAT, o.toString()));
+                } else if (o != null && o instanceof Long) {
+                    list.add(new Variable(ParameterType.LONG, o.toString()));
                 }
             }
         }
