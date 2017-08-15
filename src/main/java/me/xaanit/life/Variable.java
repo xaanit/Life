@@ -25,7 +25,7 @@ public class Variable {
             case BOOLEAN:
                 return info.equalsIgnoreCase("true");
             default:
-                return info.replace("\\\"", "\"");
+                return info.substring(1, info.length() - 1);
         }
     }
 

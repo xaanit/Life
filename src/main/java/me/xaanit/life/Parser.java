@@ -40,10 +40,13 @@ public class Parser {
 
     private static final String FOR = "for\\([0-9]+,\\s+[0-9]+\\)";
 
-    private static final String VARIABLE = "var\\s+(.+)\\s+=\\s+(.+)";
+    private static final String VARIABLE = "var\\s+([a-zA-Z]+)\\s+=\\s+(.+)";
     private static final Pattern VARIABLE_PATTERN = Pattern.compile(VARIABLE);
 
     private static String EDITING_VARIABLE = "(%s)\\s+=\\s+(.+)";
+
+    private static final String IF_METHOD = "if\\(!?((.+?)\\((.*)\\))\\)";
+    private static final String IF_VARIABLE = "if\\(!?{(.+)}\\)";
 
     private int maxWhileRepetitions = -1;
     private int maxForRepetitions = -1;
@@ -158,6 +161,9 @@ public class Parser {
             UserVariable temp = getUserVariable(typeS, lineNumber, name, args);
             variables.put(name, temp);
         } else if (line.startsWith("if")) {//if
+            String findMethod;
+
+        } else if (line.startsWith("while")) { // while
         } else if (line.startsWith("for")) {
             int startFrom;
             int goTo;
@@ -398,7 +404,7 @@ public class Parser {
                 var = var.trim();
                 var = trimLeadingSpaces(var);
                 if (var.matches(STRING)) {
-                    list.add(new Variable(ParameterType.STRING, var.substring(1, var.length() - 1)));
+                    list.add(new Variable(ParameterType.STRING, var));
                 } else if (var.matches(CHAR)) {
                     list.add(new Variable(ParameterType.CHAR, var));
                 } else if (var.matches(INT)) {
