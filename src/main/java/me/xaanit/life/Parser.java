@@ -213,7 +213,7 @@ public class Parser {
                 }
 
                 if (foundStarts != foundEnds)
-                    throw new ParseException("Found a mismatched amount of <'s and >'s! Found " + foundStarts + " <'s and " + foundEnds + " >'s.", lineNumber);
+                    throw new ParseException("Found a mismatched amount of <'s and >'s! Found " + foundStarts + " <'s and " + foundEnds + " >'s. Line: " + line, lineNumber);
 
                 String exe = trimLeadingSpaces(line.substring(firstFoundIndex + 1, lastFoundIndex).trim());
                 execute(exe, args, lineNumber);
@@ -226,7 +226,7 @@ public class Parser {
             String find = trimLeadingSpaces(line.substring(0, indexOfWhile).trim());
             boolean cont;
             boolean shouldBeFalse = find.charAt(3) == '!';
-            String ifStatement = "";
+            String ifStatement;
             if (find.matches(String.format(IF_OR_WHILE_METHOD, "while"))) {
                 Pattern p = Pattern.compile(String.format(IF_OR_WHILE_METHOD, "while"));
                 Matcher m = p.matcher(find);
@@ -251,7 +251,7 @@ public class Parser {
             }
 
             if (cont) {
-                int[] arr = getBracketInfo(find, "<<<", ">>>");
+                int[] arr = getBracketInfo(line, "<<<", ">>>");
                 int foundStarts = arr[0];
                 int foundEnds = arr[1];
                 int firstFoundIndex = arr[2];
@@ -259,13 +259,15 @@ public class Parser {
                 if (foundStarts != foundEnds)
                     throw new ParseException("Found a mismatched amount of <<<'s and >>>'s! Found " + foundStarts + " <<<'s and " + foundEnds + " >>>'s.", lineNumber);
 
-                String exe = trimLeadingSpaces(line.substring(firstFoundIndex + 1, lastFoundIndex).trim());
-                exe = "if(" + ifStatement + ") < " + exe + " > ";
+                String exe = trimLeadingSpaces(line.substring(firstFoundIndex + 3, lastFoundIndex).trim());
+                exe = "if(" + (shouldBeFalse ? "!" : "") + ifStatement + ") < " + exe + " > ";
                 int i = 0;
-                while(!(execute(exe, args, lineNumber) instanceof FailedIf)) {
-                    if(i == maxWhileRepetitions)
-                        break;
-                    i++;
+                if (maxWhileRepetitions != 0) {
+                    while (!(execute(exe, args, lineNumber) instanceof FailedIf)) {
+                        if (i == maxWhileRepetitions)
+                            break;
+                        i++;
+                    }
                 }
             }
         } else if (line.startsWith("for")) {
@@ -366,6 +368,12 @@ public class Parser {
             throw new ParseException("Line not valid! Line: " + line, lineNumber);
         }
         return null; // I have no idea if it can get here. I'll be surprised if it does.
+    }
+
+    private String turnWhileIntoIf(String line, String condition, boolean includeNot) {
+        String res = "if(" + (includeNot ? "!" : "") + condition + ") < " + line + " > ";
+        System.out.println("TURNED WHILE INTO IF: " + res);
+        return res;
     }
 
     /**
@@ -658,9 +666,11 @@ public class Parser {
         int length = toLookFor.length();
         while (true) {
             try {
-                char a = i == 0 ? ' ' : line.charAt(i - length);
+                int temp1 = foundStarts;
+                int temp2 = foundEnds;
+                char a = i <= length ? ' ' : line.charAt(i - length);
                 String b = line.substring(i, i + length);
-                char c = i == line.length() - 1 ? ' ' : line.charAt(i + length + 1);
+                char c = i == line.length() - length ? ' ' : line.charAt(i + length);
 
                 if (b.equalsIgnoreCase(toLookFor) && (a != '<') && (c != '<')) {
                     foundStarts++;
@@ -684,5 +694,6 @@ public class Parser {
     }
 
 
-    private class FailedIf {}
+    private class FailedIf {
+    }
 }
