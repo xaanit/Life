@@ -162,7 +162,7 @@ public class Parser {
             variables.put(name, temp);
         } else if (line.startsWith("if")) {//if
             int indexOfIf = line.indexOf("<");
-            if (indexOfIf == -1) throw new ParseException("If statment invalid!", lineNumber);
+            if (indexOfIf == -1) throw new ParseException("If statement invalid!", lineNumber);
             String find = trimLeadingSpaces(line.substring(0, indexOfIf).trim());
             boolean cont;
             boolean shouldBeFalse = find.charAt(3) == '!';
@@ -217,8 +217,57 @@ public class Parser {
 
                 String exe = trimLeadingSpaces(line.substring(firstFoundIndex + 1, lastFoundIndex).trim());
                 execute(exe, args, lineNumber);
+            } else {
+                return new FailedIf();
             }
         } else if (line.startsWith("while")) { // while
+            int indexOfWhile = line.indexOf("<<<");
+            if (indexOfWhile == -1) throw new ParseException("While loop invalid!", lineNumber);
+            String find = trimLeadingSpaces(line.substring(0, indexOfWhile).trim());
+            boolean cont;
+            boolean shouldBeFalse = find.charAt(3) == '!';
+            String ifStatement = "";
+            if (find.matches(String.format(IF_OR_WHILE_METHOD, "while"))) {
+                Pattern p = Pattern.compile(String.format(IF_OR_WHILE_METHOD, "while"));
+                Matcher m = p.matcher(find);
+                m.find();
+                String temp = m.group(1);
+                Object o = execute(temp, args, lineNumber);
+                if (!(o instanceof Boolean))
+                    throw new ParseException("Methods in if statements can only be booleans!", lineNumber);
+                boolean b = (boolean) o;
+                cont = shouldBeFalse ? !b : b;
+                ifStatement = temp;
+            } else if (find.matches(String.format(IF_OR_WHILE_VARIABLE, "while"))) {
+                Pattern p = Pattern.compile(String.format(IF_OR_WHILE_VARIABLE, "while"));
+                Matcher m = p.matcher(find);
+                m.find();
+                String var = m.group(1);
+                boolean b = var.matches(BOOLEAN) && var.equalsIgnoreCase("true");
+                cont = shouldBeFalse ? !b : b;
+                ifStatement = var;
+            } else {
+                throw new ParseException("Invalid token in while loop!", lineNumber);
+            }
+
+            if (cont) {
+                int[] arr = getBracketInfo(find, "<<<", ">>>");
+                int foundStarts = arr[0];
+                int foundEnds = arr[1];
+                int firstFoundIndex = arr[2];
+                int lastFoundIndex = arr[3];
+                if (foundStarts != foundEnds)
+                    throw new ParseException("Found a mismatched amount of <<<'s and >>>'s! Found " + foundStarts + " <<<'s and " + foundEnds + " >>>'s.", lineNumber);
+
+                String exe = trimLeadingSpaces(line.substring(firstFoundIndex + 1, lastFoundIndex).trim());
+                exe = "if(" + ifStatement + ") < " + exe + " > ";
+                int i = 0;
+                while(!(execute(exe, args, lineNumber) instanceof FailedIf)) {
+                    if(i == maxWhileRepetitions)
+                        break;
+                    i++;
+                }
+            }
         } else if (line.startsWith("for")) {
             int startFrom;
             int goTo;
@@ -599,7 +648,41 @@ public class Parser {
         this.maxForRepetitions = maxForRepetitions;
     }
 
+
+    private int[] getBracketInfo(String line, String toLookFor, String backwards) {
+        int foundStarts = 0;
+        int foundEnds = 0;
+        int firstFoundIndex = -2;
+        int lastFoundIndex = -2;
+        int i = 0;
+        int length = toLookFor.length();
+        while (true) {
+            try {
+                char a = i == 0 ? ' ' : line.charAt(i - length);
+                String b = line.substring(i, i + length);
+                char c = i == line.length() - 1 ? ' ' : line.charAt(i + length + 1);
+
+                if (b.equalsIgnoreCase(toLookFor) && (a != '<') && (c != '<')) {
+                    foundStarts++;
+                    if (firstFoundIndex == -2)
+                        firstFoundIndex = i;
+                } else if (b.equalsIgnoreCase(backwards) && (a != '>') && (c != '>')) {
+                    foundEnds++;
+                    lastFoundIndex = i;
+                }
+                i++;
+            } catch (IndexOutOfBoundsException ex) {
+                break;
+            }
+        }
+        return new int[]{foundStarts, foundEnds, firstFoundIndex, lastFoundIndex};
+    }
+
+
     public static void async(Runnable r) {
         parserService.execute(r);
     }
+
+
+    private class FailedIf {}
 }
