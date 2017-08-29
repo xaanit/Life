@@ -31,7 +31,7 @@ public class Parser {
     private Map<String, UserVariable> variables = new HashMap<>();
 
     private static final String EMPTY_METHOD = ".+\\(\\)";
-    private static final String STRING = "\".+\"";
+    private static final String STRING = "\".*\"";
     private static final String CHAR = "'.'";
     private static final String BOOLEAN = "false|true|False|True";
     private static final String INT = "-?[0-9]+";
