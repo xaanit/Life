@@ -17,6 +17,7 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -46,10 +47,13 @@ public class Parser {
     private static final String EDITING_VARIABLE = "(%s)\\s+=\\s+(.+)";
 
     private static final String IF_OR_WHILE_METHOD = "%s\\(!?((.+?)\\((.*)\\))\\)";
-    private static final String IF_OR_WHILE_VARIABLE = "%s\\(!?(.+)\\)";
+    private static final String IF_OR_WHILE_VARIABLE = "%s\\(!?(\\{(.+)\\})\\)";
 
     private int maxWhileRepetitions = -1;
     private int maxForRepetitions = -1;
+
+    private AtomicInteger currentForIterations = new AtomicInteger(0);
+    private AtomicInteger currentWhileIterations = new AtomicInteger(0);
 
     private static ExecutorService parserService = Executors.newFixedThreadPool(
             ForkJoinPool.getCommonPoolParallelism(), r -> {
@@ -128,14 +132,6 @@ public class Parser {
 
         line = line.replaceAll("\\/\\/.+", "").replaceAll("\\/\\/", "").replaceAll("\\/\\*.+\\*\\/", ""); // Comments
 
-        for (UserVariable v : variables.values()) {
-            String temp;
-            if (v.getType() == ParameterType.STRING)
-                temp = "\"" + v.getInfo() + "\"";
-            else
-                temp = v.getInfo();
-            line = line.replace("{" + v.getName() + "}", temp);
-        }
         int index = line.indexOf('(');
         if (line.startsWith("var")) {
             if (!line.matches(VARIABLE))
@@ -174,14 +170,22 @@ public class Parser {
                 if (!(o instanceof Boolean))
                     throw new ParseException("Methods in if statements can only be booleans!", lineNumber);
                 boolean b = (boolean) o;
-                cont = shouldBeFalse ? !b : b;
+                cont = shouldBeFalse ? b == false : b == true;
             } else if (find.matches(String.format(IF_OR_WHILE_VARIABLE, "if"))) {
                 Pattern p = Pattern.compile(String.format(IF_OR_WHILE_VARIABLE, "if"));
                 Matcher m = p.matcher(find);
                 m.find();
-                String var = m.group(1);
-                boolean b = var.matches(BOOLEAN) && var.equalsIgnoreCase("true");
-                cont = shouldBeFalse ? !b : b;
+                String var = m.group(2);
+                UserVariable variable = null;
+                for (UserVariable v : this.variables.values()) {
+                    if (v.getName().equals(var)) {
+                        variable = v;
+                        break;
+                    }
+                }
+                if (variable == null) throw new ParseException("", lineNumber);
+                boolean b = (boolean) variable.convert();
+                cont = shouldBeFalse ? b == false : b == true;
             } else {
                 throw new ParseException("Invalid token in if statement!", lineNumber);
             }
@@ -225,6 +229,7 @@ public class Parser {
             if (indexOfWhile == -1) throw new ParseException("While loop invalid!", lineNumber);
             String find = trimLeadingSpaces(line.substring(0, indexOfWhile).trim());
             boolean cont;
+            String possibleFound = null;
             boolean shouldBeFalse = find.charAt(3) == '!';
             String ifStatement;
             if (find.matches(String.format(IF_OR_WHILE_METHOD, "while"))) {
@@ -236,16 +241,17 @@ public class Parser {
                 if (!(o instanceof Boolean))
                     throw new ParseException("Methods in if statements can only be booleans!", lineNumber);
                 boolean b = (boolean) o;
-                cont = shouldBeFalse ? !b : b;
+                cont = shouldBeFalse ? b == false : b == true;
                 ifStatement = temp;
             } else if (find.matches(String.format(IF_OR_WHILE_VARIABLE, "while"))) {
                 Pattern p = Pattern.compile(String.format(IF_OR_WHILE_VARIABLE, "while"));
                 Matcher m = p.matcher(find);
                 m.find();
-                String var = m.group(1);
+                String var = m.group(2);
+                String toPass = m.group(1);
                 boolean b = var.matches(BOOLEAN) && var.equalsIgnoreCase("true");
-                cont = shouldBeFalse ? !b : b;
-                ifStatement = var;
+                cont = shouldBeFalse ? b == false : b == true;
+                ifStatement = toPass;
             } else {
                 throw new ParseException("Invalid token in while loop!", lineNumber);
             }
@@ -261,12 +267,11 @@ public class Parser {
 
                 String exe = trimLeadingSpaces(line.substring(firstFoundIndex + 3, lastFoundIndex).trim());
                 exe = "if(" + (shouldBeFalse ? "!" : "") + ifStatement + ") < " + exe + " > ";
-                int i = 0;
                 if (maxWhileRepetitions != 0) {
                     while (!(execute(exe, args, lineNumber) instanceof FailedIf)) {
-                        if (i == maxWhileRepetitions)
+                        if (currentWhileIterations.get() >= maxWhileRepetitions + 2)
                             break;
-                        i++;
+                        currentWhileIterations.incrementAndGet();
                     }
                 }
             }
@@ -309,8 +314,12 @@ public class Parser {
                 if (foundStarts != foundEnds)
                     throw new ParseException("Found a mismatched amount of <<'s and >>'s! Found " + foundStarts + " <<'s and " + foundEnds + " >>'s.", lineNumber);
                 String exe = trimLeadingSpaces(line.substring(firstFoundIndex + 2, lastFoundIndex).trim());
-                for (int goFrom = startFrom; goFrom < goTo; goFrom++)
+                for (int goFrom = startFrom; goFrom < goTo; goFrom++) {
+                    if(currentForIterations.get() >= maxForRepetitions + 2)
+                        break;
                     execute(exe, args, lineNumber);
+                    currentForIterations.incrementAndGet();
+                }
             }
         } else if (index != -1) {
             String method = line.substring(0, index);
@@ -516,6 +525,14 @@ public class Parser {
             for (String var : variables) {
                 var = var.trim();
                 var = trimLeadingSpaces(var);
+                for (UserVariable v : this.variables.values()) {
+                    String temp;
+                    if (v.getType() == ParameterType.STRING)
+                        temp = "\"" + v.getInfo() + "\"";
+                    else
+                        temp = v.getInfo();
+                    var = var.replace("{" + v.getName() + "}", temp);
+                }
                 Object o = null;
                 if (var.matches(METHOD)) {
                     o = execute(var, args, lineNumber);
@@ -600,6 +617,8 @@ public class Parser {
         fr.close();
         this.variables.clear();
         execute(res, args);
+        this.currentForIterations.set(0);
+        this.currentWhileIterations.set(0);
     }
 
 

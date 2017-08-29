@@ -1,10 +1,10 @@
 # Life
 
-Making your own intepreted language (within reason).
+Life is an embeddable scripting language. 
 
 Todo|Status
 ---|---
-While | Planning
+
 
 It's super easy to use this. See [Test.life](https://github.com/xaanit/Life/blob/master/Test.life) for a sample input.
 
@@ -32,7 +32,7 @@ This will print out `Logging!` to the console (can you guess what else?), based 
 [![](https://jitpack.io/v/xaanit/life.svg)](https://jitpack.io/#xaanit/life)
 
 
-Add these to your pom.xml (no elipses, replace `@VERSION@` with the version you'd like):
+Add these to your pom.xml (no ellipses, replace `@VERSION@` with the version you'd like):
 
 ```xml
 	<repositories>
