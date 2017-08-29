@@ -8,4 +8,9 @@ public class ParserAddition {
     public static String concat(String str, String str2) {
         return str + str2;
     }
+
+    @LifeExecutable
+    public static int add(int one, int two) {
+        return one + two;
+    }
 }
