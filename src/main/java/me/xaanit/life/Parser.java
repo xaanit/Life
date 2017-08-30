@@ -315,7 +315,7 @@ public class Parser {
                     throw new ParseException("Found a mismatched amount of <<'s and >>'s! Found " + foundStarts + " <<'s and " + foundEnds + " >>'s.", lineNumber);
                 String exe = trimLeadingSpaces(line.substring(firstFoundIndex + 2, lastFoundIndex).trim());
                 for (int goFrom = startFrom; goFrom < goTo; goFrom++) {
-                    if(currentForIterations.get() >= maxForRepetitions + 2)
+                    if (currentForIterations.get() >= maxForRepetitions + 2)
                         break;
                     execute(exe, args, lineNumber);
                     currentForIterations.incrementAndGet();
@@ -619,6 +619,20 @@ public class Parser {
         execute(res, args);
         this.currentForIterations.set(0);
         this.currentWhileIterations.set(0);
+    }
+
+    /**
+     * Executes the life file with the specified args.
+     *
+     * @param path The path to the file
+     * @param args The args to provide to the user.
+     * @throws IOException
+     * @throws InvocationTargetException
+     * @throws IllegalAccessException
+     * @throws LifeException             If anything goes wrong.
+     */
+    public void execute(String path, String... args) throws IOException, InvocationTargetException, IllegalAccessException {
+        execute(new File(path), args);
     }
 
 
