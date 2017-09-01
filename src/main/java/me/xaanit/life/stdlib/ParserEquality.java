@@ -1,6 +1,6 @@
 package me.xaanit.life.stdlib;
 
-import me.xaanit.life.annotations.LifeExecutable;
+import me.xaanit.life.internal.annotations.LifeExecutable;
 
 @SuppressWarnings("unused")
 public class ParserEquality {

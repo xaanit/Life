@@ -1,9 +1,9 @@
 package me.xaanit.life;
 
-import me.xaanit.life.annotations.LifeExecutable;
-import me.xaanit.life.exceptions.IncompatibleFileExtension;
-import me.xaanit.life.exceptions.LifeException;
-import me.xaanit.life.exceptions.ParseException;
+import me.xaanit.life.internal.annotations.LifeExecutable;
+import me.xaanit.life.internal.exceptions.IncompatibleFileExtension;
+import me.xaanit.life.internal.exceptions.LifeException;
+import me.xaanit.life.internal.exceptions.ParseException;
 import me.xaanit.life.stdlib.ParserAddition;
 import me.xaanit.life.stdlib.ParserEquality;
 

@@ -1,4 +1,4 @@
-package me.xaanit.life.exceptions;
+package me.xaanit.life.internal.exceptions;
 
 public class IncompatibleFileExtension extends LifeException {
 
