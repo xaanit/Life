@@ -379,11 +379,6 @@ public class Parser {
         return null; // I have no idea if it can get here. I'll be surprised if it does.
     }
 
-    private String turnWhileIntoIf(String line, String condition, boolean includeNot) {
-        String res = "if(" + (includeNot ? "!" : "") + condition + ") < " + line + " > ";
-        System.out.println("TURNED WHILE INTO IF: " + res);
-        return res;
-    }
 
     /**
      * Executes the given code, one line at a time.
@@ -393,7 +388,6 @@ public class Parser {
      * @throws InvocationTargetException
      * @throws IllegalAccessException
      */
-
     private void execute(List<String> lines, String[] args) throws InvocationTargetException, IllegalAccessException, LifeException {
         int i = 0;
         for (String line : lines) {
