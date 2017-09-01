@@ -1,6 +1,6 @@
 # Life
 
-Life is an embeddable scripting language. 
+Life is an embeddable scripting language. Heavily based on Java.
 
 Todo|Status
 ---|---
