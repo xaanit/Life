@@ -1,4 +1,4 @@
-package me.xaanit.life.annotations;
+package me.xaanit.life.internal.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
