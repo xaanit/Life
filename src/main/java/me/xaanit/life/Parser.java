@@ -518,7 +518,7 @@ public class Parser {
 							+ typeS, lineNumber);
 		}
 		return new UserVariable(type, type == ParameterType.STRING ? typeS.replace("\"", "") : typeS,
-				name);
+				name, false);
 	}
 
 	/**
