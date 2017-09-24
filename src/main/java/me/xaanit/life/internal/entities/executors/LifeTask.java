@@ -1,11 +1,17 @@
 package me.xaanit.life.internal.entities.executors;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import me.xaanit.life.internal.entities.LifeMethod;
+import me.xaanit.life.internal.entities.token.Token;
+import me.xaanit.life.internal.entities.token.Tokeniser;
 import me.xaanit.life.internal.exceptions.LifeException;
 
 /**
@@ -22,6 +28,7 @@ public final class LifeTask {
 	private final AtomicInteger currentForRepitions;
 	private final File file;
 	private final String[] args;
+	private final Tokeniser tokeniser;
 
 	protected LifeTask(final int maxWhileRepitions, final int maxForRepitions,
 			final List<LifeMethod> methods, final File file, final Optional<String[]> args) {
@@ -36,11 +43,38 @@ public final class LifeTask {
 		this.currentForRepitions = maxForRepitions < 0 ? null : new AtomicInteger();
 		this.args = args.isPresent() ? args.get() : new String[0];
 		this.file = file;
+		tokeniser = new Tokeniser();
+	}
+
+	/**
+	 * Executes the task,
+	 *
+	 * @return True if there was no errors
+	 * @throws LifeException If there's a problem on execution
+	 */
+	public boolean execute() throws LifeException {
+		try {
+			FileReader fr = new FileReader(file);
+			BufferedReader br = new BufferedReader(fr);
+			String line;
+			String toTokenise = "";
+			while((line = br.readLine()) != null) {
+				toTokenise += line;
+			}
+
+			Stack<Token> tokens = tokeniser.tokenise(toTokenise);
+			while(!tokens.empty()) {
+				handle(tokens.pop());
+			}
+			return true;
+		} catch(IOException ex) {
+			throw new LifeException("Could not read file. " + ex.getMessage());
+		}
 	}
 
 
-	public boolean execute() {
-		return true;
+	private void handle(Token token) {
+
 	}
 
 }
