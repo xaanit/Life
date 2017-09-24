@@ -1,7 +1,5 @@
 package me.xaanit.life.internal.entities;
 
-import me.xaanit.life.internal.entities.enums.ParameterType;
-
 /**
  * Represents a user made variable
  */

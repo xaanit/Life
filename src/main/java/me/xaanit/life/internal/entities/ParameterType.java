@@ -1,4 +1,4 @@
-package me.xaanit.life.internal.entities.enums;
+package me.xaanit.life.internal.entities;
 
 public enum ParameterType {
 	STRING,
