@@ -28,23 +28,23 @@ public class LifeMethod {
 		final Parameter[] parameters = method.getParameters(); // To loop through
 		this.variables = new MethodVariable[parameters.length];
 		for(int i = 0; i < parameters.length; i++) {
-			ParameterType type;
+			Type type;
 			String info = parameters[i].getType()
 					.getName(); // All primitives are just the name, string is java.lang.String
 			if(info.equalsIgnoreCase("long")) {
-				type = ParameterType.LONG;
+				type = Type.LONG;
 			} else if(info.equalsIgnoreCase("double")) {
-				type = ParameterType.DOUBLE;
+				type = Type.DOUBLE;
 			} else if(info.equalsIgnoreCase("char")) {
-				type = ParameterType.CHAR;
+				type = Type.CHAR;
 			} else if(info.equalsIgnoreCase("float")) {
-				type = ParameterType.FLOAT;
+				type = Type.FLOAT;
 			} else if(info.equalsIgnoreCase("int")) {
-				type = ParameterType.INT;
+				type = Type.INT;
 			} else if(info.equalsIgnoreCase("boolean")) {
-				type = ParameterType.BOOLEAN;
+				type = Type.BOOLEAN;
 			} else if(info.equalsIgnoreCase("java.lang.String")) {
-				type = ParameterType.STRING;
+				type = Type.STRING;
 			} else {
 				throw new LifeException(
 						"Only primitives (excluding byte and short) and Strings are allowed!");
@@ -124,15 +124,15 @@ public class LifeMethod {
 	}
 
 
-	private class MethodVariable {
+	public class MethodVariable {
 
-		private final ParameterType type;
+		private final Type type;
 
-		public MethodVariable(final ParameterType type) {
+		public MethodVariable(final Type type) {
 			this.type = type;
 		}
 
-		public ParameterType getType() {
+		public Type getType() {
 			return type;
 		}
 

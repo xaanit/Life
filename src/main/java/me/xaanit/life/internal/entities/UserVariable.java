@@ -11,12 +11,12 @@ public class UserVariable extends Variable {
 	/**
 	 * Makes a new User Variable
 	 *
-	 * @param type The type {@link ParameterType}
-	 * @param info The info (i.e if type == {@link ParameterType}.INT, this could be "4")
+	 * @param type The type {@link Type}
+	 * @param info The info (i.e if type == {@link Type}.INT, this could be "4")
 	 * @param name The name to call it by
 	 * @param constant If the variable is final or not
 	 */
-	public UserVariable(final ParameterType type, final String info, final String name,
+	public UserVariable(final Type type, final String info, final String name,
 			final boolean constant) {
 		super(type, info);
 		this.name = name;

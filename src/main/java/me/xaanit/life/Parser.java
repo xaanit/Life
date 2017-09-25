@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 import me.xaanit.life.internal.annotations.LifeExecutable;
 import me.xaanit.life.internal.entities.UserVariable;
 import me.xaanit.life.internal.entities.Variable;
-import me.xaanit.life.internal.entities.ParameterType;
+import me.xaanit.life.internal.entities.Type;
 import me.xaanit.life.internal.exceptions.IncompatibleFileExtension;
 import me.xaanit.life.internal.exceptions.LifeException;
 import me.xaanit.life.internal.exceptions.ParseException;
@@ -155,7 +155,7 @@ public class Parser {
 			}
 			Matcher m = VARIABLE_PATTERN.matcher(line);
 			m.find();
-			ParameterType type;
+			Type type;
 			String name = m.group(1);
 			if(variables.containsKey(name)) {
 				throw new ParseException("Variable " + name + " already exists!", lineNumber);
@@ -453,27 +453,27 @@ public class Parser {
 	 */
 	private UserVariable getUserVariable(String typeS, int lineNumber, String name, String[] args)
 			throws IllegalAccessException, InvocationTargetException {
-		ParameterType type;
+		Type type;
 		if(typeS.matches(STRING)) {
-			type = ParameterType.STRING;
+			type = Type.STRING;
 
 		} else if(typeS.matches(CHAR)) {
-			type = ParameterType.CHAR;
+			type = Type.CHAR;
 
 		} else if(typeS.matches(INT)) {
-			type = ParameterType.INT;
+			type = Type.INT;
 
 		} else if(typeS.matches(DOUBLE)) {
-			type = ParameterType.DOUBLE;
+			type = Type.DOUBLE;
 
 		} else if(typeS.matches(BOOLEAN)) {
-			type = ParameterType.BOOLEAN;
+			type = Type.BOOLEAN;
 
 		} else if(typeS.matches(FLOAT)) {
-			type = ParameterType.FLOAT;
+			type = Type.FLOAT;
 
 		} else if(typeS.matches(LONG)) {
-			type = ParameterType.LONG;
+			type = Type.LONG;
 
 		} else if(typeS.indexOf("(") != -1) {
 			if(typeS.indexOf(")") == -1) {
@@ -485,25 +485,25 @@ public class Parser {
 			Object called = execute(typeS, args, lineNumber);
 
 			if(called instanceof String) {
-				type = ParameterType.STRING;
+				type = Type.STRING;
 				typeS = "\"" + called.toString() + "\"";
 			} else if(called instanceof Double) {
-				type = ParameterType.DOUBLE;
+				type = Type.DOUBLE;
 				typeS = called.toString();
 			} else if(called instanceof Float) {
-				type = ParameterType.FLOAT;
+				type = Type.FLOAT;
 				typeS = called.toString() + "F";
 			} else if(called instanceof Character) {
-				type = ParameterType.CHAR;
+				type = Type.CHAR;
 				typeS = "'" + called.toString() + "'";
 			} else if(called instanceof Integer) {
-				type = ParameterType.INT;
+				type = Type.INT;
 				typeS = called.toString();
 			} else if(called instanceof Long) {
-				type = ParameterType.LONG;
+				type = Type.LONG;
 				typeS = called.toString() + "L";
 			} else if(called instanceof Boolean) {
-				type = ParameterType.BOOLEAN;
+				type = Type.BOOLEAN;
 				typeS = called.toString().toLowerCase();
 			} else if(called == null) {
 				throw new ParseException("Void methods can not be used in variables!", lineNumber);
@@ -517,7 +517,7 @@ public class Parser {
 					"Variables can only be primitives (excluding byte and short) or Strings! Floats must be suffixed with f or F, longs with l or L, chars surrounded by single quotes, and Strings surrounded by double! You can call methods! Var: "
 							+ typeS, lineNumber);
 		}
-		return new UserVariable(type, type == ParameterType.STRING ? typeS.replace("\"", "") : typeS,
+		return new UserVariable(type, type == Type.STRING ? typeS.replace("\"", "") : typeS,
 				name, false);
 	}
 
@@ -566,7 +566,7 @@ public class Parser {
 				var = trimLeadingSpaces(var);
 				for(UserVariable v : this.variables.values()) {
 					String temp;
-					if(v.getType() == ParameterType.STRING) {
+					if(v.getType() == Type.STRING) {
 						temp = "\"" + v.getInfo() + "\"";
 					} else {
 						temp = v.getInfo();
@@ -578,33 +578,33 @@ public class Parser {
 					o = execute(var, args, lineNumber);
 				}
 				if(var.matches(STRING)) {
-					list.add(new Variable(ParameterType.STRING, var));
+					list.add(new Variable(Type.STRING, var));
 				} else if(var.matches(CHAR)) {
-					list.add(new Variable(ParameterType.CHAR, var));
+					list.add(new Variable(Type.CHAR, var));
 				} else if(var.matches(INT)) {
-					list.add(new Variable(ParameterType.INT, var));
+					list.add(new Variable(Type.INT, var));
 				} else if(var.matches(DOUBLE)) {
-					list.add(new Variable(ParameterType.DOUBLE, var));
+					list.add(new Variable(Type.DOUBLE, var));
 				} else if(var.matches(BOOLEAN)) {
-					list.add(new Variable(ParameterType.BOOLEAN, var));
+					list.add(new Variable(Type.BOOLEAN, var));
 				} else if(var.matches(FLOAT)) {
-					list.add(new Variable(ParameterType.FLOAT, var));
+					list.add(new Variable(Type.FLOAT, var));
 				} else if(var.matches(LONG)) {
-					list.add(new Variable(ParameterType.LONG, var));
+					list.add(new Variable(Type.LONG, var));
 				} else if(o != null && o instanceof String) {
-					list.add(new Variable(ParameterType.STRING, o.toString()));
+					list.add(new Variable(Type.STRING, o.toString()));
 				} else if(o != null && o instanceof Character) {
-					list.add(new Variable(ParameterType.CHAR, o.toString()));
+					list.add(new Variable(Type.CHAR, o.toString()));
 				} else if(o != null && o instanceof Integer) {
-					list.add(new Variable(ParameterType.INT, o.toString()));
+					list.add(new Variable(Type.INT, o.toString()));
 				} else if(o != null && o instanceof Double) {
-					list.add(new Variable(ParameterType.DOUBLE, o.toString()));
+					list.add(new Variable(Type.DOUBLE, o.toString()));
 				} else if(o != null && o instanceof Boolean) {
-					list.add(new Variable(ParameterType.BOOLEAN, o.toString()));
+					list.add(new Variable(Type.BOOLEAN, o.toString()));
 				} else if(o != null && o instanceof Float) {
-					list.add(new Variable(ParameterType.FLOAT, o.toString()));
+					list.add(new Variable(Type.FLOAT, o.toString()));
 				} else if(o != null && o instanceof Long) {
-					list.add(new Variable(ParameterType.LONG, o.toString()));
+					list.add(new Variable(Type.LONG, o.toString()));
 				}
 			}
 		}

@@ -5,11 +5,11 @@ package me.xaanit.life.internal.entities;
  */
 public class Variable {
 
-	private final ParameterType type;
+	private final Type type;
 	private final String info;
 
 
-	public Variable(ParameterType type, String info) {
+	public Variable(Type type, String info) {
 		this.type = type;
 		this.info = info;
 	}
@@ -37,7 +37,7 @@ public class Variable {
 		return this.info;
 	}
 
-	public ParameterType getType() {
+	public Type getType() {
 		return this.type;
 	}
 
