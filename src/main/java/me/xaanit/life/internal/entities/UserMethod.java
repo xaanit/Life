@@ -8,13 +8,29 @@ public class UserMethod {
 	private final Type returnType;
 	private final String body;
 	private final String name;
+	private final boolean isMain;
 
 
-	public UserMethod(final MethodVariable[] parameters, final Type returnType, final String body, final String name) {
+	private UserMethod(final MethodVariable[] parameters, final Type returnType, final String body,
+			final String name, final boolean isMain) {
 		this.parameters = parameters;
 		this.returnType = returnType;
 		this.body = body;
 		this.name = name;
+		this.isMain = isMain;
+	}
+
+	public UserMethod(final MethodVariable[] parameters, final Type returnType, final String body,
+			final String name) {
+		this.parameters = parameters;
+		this.returnType = returnType;
+		this.body = body;
+		this.name = name;
+		this.isMain = false;
+	}
+
+	public UserMethod(String body) {
+		this(new MethodVariable[0], Type.VOID, body, "main", true);
 	}
 
 	public MethodVariable[] getParameters() {
