@@ -15,7 +15,9 @@ public enum Keyword {
 	ELSE,
 	IF,
 	FOR,
-	WHILE;
+	WHILE,
+	TO,
+	BY;
 
 
 	private String identifcation;
