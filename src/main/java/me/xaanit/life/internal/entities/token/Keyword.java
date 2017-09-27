@@ -1,15 +1,15 @@
 package me.xaanit.life.internal.entities.token;
 
 public enum Keyword {
+	STRING("String"),
+	DOUBLE,
 	CHAR,
+	FLOAT,
 	LONG,
 	INT,
-	STRING("String"),
 	BOOLEAN,
-	FLOAT,
-	DOUBLE,
-	CONST,
 	VOID,
+	CONST,
 	DEF,
 	ELIF,
 	ELSE,

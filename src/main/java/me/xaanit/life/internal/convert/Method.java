@@ -21,7 +21,9 @@ public class Method extends BaseParser<Object> implements Matcher<UserMethod> {
 		return Sequence(
 				name(),
 				paren(true),
+				space(true),
 				ZeroOrMore(paramType()),
+				space(true),
 				paren(false),
 				EOI
 		);
@@ -29,11 +31,15 @@ public class Method extends BaseParser<Object> implements Matcher<UserMethod> {
 
 	public Rule paramType() {
 		return Sequence(
-				FirstOf(Type.STRING.getName(), Type.CHAR.getName(), Type.VOID.getName(),
-						Type.LONG.getName(), Type.FLOAT.getName(), Type.BOOLEAN.getName(),
+				Optional(String("const")),
+				FirstOf(Type.STRING.getName(), Type.CHAR.getName(), Type.LONG.getName(),
+						Type.FLOAT.getName(), Type.BOOLEAN.getName(),
 						Type.DOUBLE.getName(), Type.INT
 								.getName()),
-				identifer()
+				space(),
+				identifer(),
+				Optional(String(',')),
+				space(true)
 		);
 	}
 
