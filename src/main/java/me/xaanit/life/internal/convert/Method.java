@@ -6,10 +6,10 @@ import me.xaanit.life.internal.entities.token.Token;
 import org.parboiled.BaseParser;
 import org.parboiled.Rule;
 import org.parboiled.annotations.BuildParseTree;
-import org.parboiled.matchers.AnyMatcher;
 
 @BuildParseTree
 public class Method extends BaseParser<Object> implements Matcher<UserMethod> {
+
 
 	@Override
 	public Token<UserMethod> convert() {
@@ -18,11 +18,13 @@ public class Method extends BaseParser<Object> implements Matcher<UserMethod> {
 		return token;
 	}
 
+
+
 	public Rule method() {
 		return Sequence(
 				parameters(),
 				bracket(true),
-				new AnyMatcher(),
+				ZeroOrMore(AnyOf(MatcherVariables.EVERY_CHARACTER.getInfo().toCharArray())),
 				bracket(false),
 				EOI
 		);
@@ -99,10 +101,8 @@ public class Method extends BaseParser<Object> implements Matcher<UserMethod> {
 
 	public Rule identifer() {
 		return Sequence(
-				OneOrMore(AnyOf("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")),
-				ZeroOrMore(
-						AnyOf(
-								"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789".toCharArray()))
+				OneOrMore(AnyOf(MatcherVariables.IDENTIFIER_FIRST.getInfo())),
+				ZeroOrMore(AnyOf(MatcherVariables.IDENTIFIER_SECOND.getInfo()))
 		).suppressSubnodes();
 	}
 
