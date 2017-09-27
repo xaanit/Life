@@ -6,6 +6,7 @@ import me.xaanit.life.internal.entities.token.Token;
 import org.parboiled.BaseParser;
 import org.parboiled.Rule;
 import org.parboiled.annotations.BuildParseTree;
+import org.parboiled.matchers.AnyMatcher;
 
 @BuildParseTree
 public class Method extends BaseParser<Object> implements Matcher<UserMethod> {
@@ -17,6 +18,24 @@ public class Method extends BaseParser<Object> implements Matcher<UserMethod> {
 		return token;
 	}
 
+	public Rule method() {
+		return Sequence(
+				parameters(),
+				bracket(true),
+				new AnyMatcher(),
+				bracket(false),
+				EOI
+		);
+	}
+
+	public Rule bracket(boolean open) {
+		return Sequence(
+				space(true),
+				ZeroOrMore(newLine()),
+				String(open ? '{' : '}')
+		);
+	}
+
 	public Rule parameters() {
 		return Sequence(
 				name(),
@@ -24,8 +43,7 @@ public class Method extends BaseParser<Object> implements Matcher<UserMethod> {
 				space(true),
 				ZeroOrMore(paramType()),
 				space(true),
-				paren(false),
-				EOI
+				paren(false)
 		);
 	}
 
@@ -38,7 +56,7 @@ public class Method extends BaseParser<Object> implements Matcher<UserMethod> {
 								.getName()),
 				space(),
 				identifer(),
-				Optional(String(',')),
+				Optional(String(',')).suppressSubnodes(),
 				space(true)
 		);
 	}
@@ -67,7 +85,7 @@ public class Method extends BaseParser<Object> implements Matcher<UserMethod> {
 	}
 
 	public Rule def() {
-		return Sequence(String("def"), space());
+		return Sequence(String("def").suppressSubnodes(), space());
 	}
 
 
@@ -76,7 +94,7 @@ public class Method extends BaseParser<Object> implements Matcher<UserMethod> {
 	}
 
 	public Rule space(boolean zero) {
-		return zero ? ZeroOrMore(" ") : OneOrMore(" ");
+		return zero ? ZeroOrMore(" ").suppressSubnodes() : OneOrMore(" ").suppressSubnodes();
 	}
 
 	public Rule identifer() {
@@ -85,7 +103,12 @@ public class Method extends BaseParser<Object> implements Matcher<UserMethod> {
 				ZeroOrMore(
 						AnyOf(
 								"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789".toCharArray()))
-		);
+		).suppressSubnodes();
+	}
+
+
+	public Rule newLine() {
+		return FirstOf("\r", "\n", "\r\n");
 	}
 
 
