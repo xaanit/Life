@@ -56,9 +56,14 @@ public class Token<T> {
 		return info;
 	}
 
+
 	@Override
 	public String toString() {
-		return "TOKEN{\n\nline=" + line + "\n\ntype=" + type + "\n\nparent=" + (parent == null ? "null"
-				: parent) + "\n\ninfo=" + info + "\n\n}";
+		return "Token{" +
+				"line='" + line + '\'' +
+				", type=" + type +
+				", parent=" + parent +
+				", info=" + info +
+				'}';
 	}
 }

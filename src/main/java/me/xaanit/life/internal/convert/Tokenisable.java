@@ -15,7 +15,7 @@ public abstract class Tokenisable {
 		return tokeniser;
 	}
 
-	String trim(String input) {
+	public static String trim(String input) {
 		if(input.isEmpty()) {
 			return input;
 		}

@@ -6,7 +6,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
-import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import me.xaanit.life.internal.entities.LifeMethod;
@@ -59,12 +58,15 @@ public final class LifeTask {
 			String line;
 			String toTokenise = "";
 			while((line = br.readLine()) != null) {
-				toTokenise += line;
+				toTokenise += line + "\n";
 			}
 
-			Stack<Token> tokens = tokeniser.tokenise(toTokenise);
-			while(!tokens.empty()) {
-				handle(tokens.pop());
+			List<Token> tokens = tokeniser.tokenise(toTokenise);
+			for(Token token : tokens) {
+				System.out.println(token.toString());
+				for(int i = 0; i < 10; i++) {
+					System.out.println();
+				}
 			}
 			return true;
 		} catch(IOException ex) {
@@ -72,9 +74,5 @@ public final class LifeTask {
 		}
 	}
 
-
-	private void handle(Token token) {
-
-	}
 
 }

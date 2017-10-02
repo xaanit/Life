@@ -55,6 +55,12 @@ public class UserMethod {
 
 	@Override
 	public String toString() {
-		return "UserMethod{\n\nparameters=" + Arrays.toString(parameters) + "\n\nreturnType=" + returnType + "\n\nbody=" + body + "\n\nname=" + name + "\n\nisMain=" + isMain + "\n\n}";
+		return "UserMethod{" +
+				"parameters=" + Arrays.toString(parameters) +
+				", returnType=" + returnType +
+				", body='" + body + '\'' +
+				", name='" + name + '\'' +
+				", isMain=" + isMain +
+				'}';
 	}
 }

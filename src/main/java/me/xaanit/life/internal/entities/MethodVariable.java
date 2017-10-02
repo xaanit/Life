@@ -24,6 +24,9 @@ public class MethodVariable {
 
 	@Override
 	public String toString() {
-		return "MethodVariable{\n\ntype=" + type + "\n\nname=" + name + "\n\n}";
+		return "MethodVariable{" +
+				"type=" + type +
+				", name='" + name + '\'' +
+				'}';
 	}
 }

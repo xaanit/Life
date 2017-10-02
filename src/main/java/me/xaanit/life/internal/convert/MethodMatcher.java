@@ -23,17 +23,20 @@ public class MethodMatcher extends Tokenisable implements Matchable<UserMethod> 
 
 
 	@Override
-	public Token<UserMethod> convert(String input, int lineNumber, Token parent) {
+	public Token<UserMethod> convert(String input, Token parent) {
+		if(parent != null) {
+			throw new TokeniserException("Methods should never have parents!");
+		}
 		final String originalInput = input + "";
 		Token<UserMethod> token;
 		if(!input.matches(Regex.METHOD_DECLARATION.getRegex())) {
-			throw new TokeniserException("Invalid method declaration on line %s", lineNumber + "");
+			throw new TokeniserException("Invalid method declaration");
 		}
 		String methodDeclaration = input.substring(0, input.indexOf('{'));
 		Pattern pattern = Regex.METHOD_INFORMATION.compile();
 		Matcher m = pattern.matcher(methodDeclaration);
 		if(!m.find()) {
-			throw new TokeniserException("Something went horribly wrong on line %s", lineNumber + "");
+			throw new TokeniserException("Something went horribly wrong");
 			// There is something terribly wrong if this happens.
 		}
 		String returnType = trim(m.group(1));
@@ -61,9 +64,8 @@ public class MethodMatcher extends Tokenisable implements Matchable<UserMethod> 
 				String[] args = arg.split("\\s+"); // int max for example
 				if(args.length != 2) {
 					throw new TokeniserException(
-							"Invalid parameters at line %s, expected arguments 2, actual arguments %s, args: %s",
-							lineNumber + "", args.length + "",
-							Arrays.toString(args));
+							"Invalid parameters, expected arguments 2, actual arguments %s, args: %s",
+							args.length + "", Arrays.toString(args));
 					// Means they did like String one int two instead of String one, int two
 				}
 				args[0] = trim(args[0]);

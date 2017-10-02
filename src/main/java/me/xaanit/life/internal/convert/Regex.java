@@ -58,9 +58,22 @@ public enum Regex {
 	WHILE_INFORMATION("while\\((.+)\\)"),
 
 	/**
-	 * Gets information about the for loop, i.e the starting number (or variable), the ending number (or variable), and the incrementation
+	 * Gets information about the for loop, i.e the starting number (or variable), the ending number
+	 * (or variable), and the incrementation
 	 */
-	FOR_INFORMATION("for\\s*\\(([a-zA-Z_0-9]+)\\s*to\\s*([a-zA-Z_0-9]+)\\s*by\\s*([a-zA-Z_0-9+=\\s]+)");
+	FOR_INFORMATION(
+			"for\\s*\\(([a-zA-Z_0-9]+)\\s*to\\s*([a-zA-Z_0-9]+)\\s*by\\s*([a-zA-Z_0-9+=\\s]+)"),
+
+	// Other
+	/**
+	 * Represents a multi-line comment
+	 */
+	COMMENT_MULTILINE("\\/\\*(.|\\R)*\\*\\/"),
+
+	/**
+	 * Represents a single line comment
+	 */
+	COMMENT("\\/\\/.*");
 
 	private final String regex;
 
@@ -73,9 +86,6 @@ public enum Regex {
 	}
 
 	public Pattern compile() {
-		if(!toString().toLowerCase().contains("variable") && !toString().toLowerCase().contains("information") && !toString().equalsIgnoreCase("method_call")) {
-			throw new UnsupportedOperationException("You can only compile the patterns of information regex, variable regex, and method call!");
-		}
 		return Pattern.compile(regex);
 	}
 }
