@@ -1,14 +1,8 @@
 package me.xaanit.life.internal.entities.token;
 
+import me.xaanit.life.internal.entities.Type;
+
 public enum Keyword {
-	STRING("String"),
-	DOUBLE,
-	CHAR,
-	FLOAT,
-	LONG,
-	INT,
-	BOOLEAN,
-	VOID,
 	CONST,
 	DEF,
 	ELIF,
@@ -36,6 +30,6 @@ public enum Keyword {
 				return true;
 			}
 		}
-		return false;
+		return Type.isValidType(token, true);
 	}
 }

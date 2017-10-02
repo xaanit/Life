@@ -1,6 +1,6 @@
 package me.xaanit.life.internal.entities;
 
-import me.xaanit.life.internal.entities.LifeMethod.MethodVariable;
+import java.util.Arrays;
 
 public class UserMethod {
 
@@ -47,5 +47,57 @@ public class UserMethod {
 
 	public String getName() {
 		return name;
+	}
+
+	public boolean isMain() {
+		return isMain;
+	}
+
+	@Override
+	public String toString() {
+		return "UserMethod{" +
+				"parameters=" + Arrays.toString(parameters) +
+				", returnType=" + returnType +
+				", body='" + body + '\'' +
+				", name='" + name + '\'' +
+				", isMain=" + isMain +
+				'}';
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if(this == o) {
+			return true;
+		}
+		if(!(o instanceof UserMethod)) {
+			return false;
+		}
+
+		UserMethod that = (UserMethod) o;
+
+		if(isMain != that.isMain) {
+			return false;
+		}
+		// Probably incorrect - comparing Object[] arrays with Arrays.equals
+		if(!Arrays.equals(parameters, that.parameters)) {
+			return false;
+		}
+		if(returnType != that.returnType) {
+			return false;
+		}
+		if(body != null ? !body.equals(that.body) : that.body != null) {
+			return false;
+		}
+		return name != null ? name.equals(that.name) : that.name == null;
+	}
+
+	@Override
+	public int hashCode() {
+		int result = Arrays.hashCode(parameters);
+		result = 31 * result + (returnType != null ? returnType.hashCode() : 0);
+		result = 31 * result + (body != null ? body.hashCode() : 0);
+		result = 31 * result + (name != null ? name.hashCode() : 0);
+		result = 31 * result + (isMain ? 1 : 0);
+		return result;
 	}
 }

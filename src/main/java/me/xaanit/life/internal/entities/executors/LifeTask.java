@@ -6,10 +6,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
-import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import me.xaanit.life.internal.entities.LifeMethod;
+import me.xaanit.life.internal.entities.UserMethod;
 import me.xaanit.life.internal.entities.token.Token;
 import me.xaanit.life.internal.entities.token.Tokeniser;
 import me.xaanit.life.internal.exceptions.LifeException;
@@ -43,7 +43,7 @@ public final class LifeTask {
 		this.currentForRepitions = maxForRepitions < 0 ? null : new AtomicInteger();
 		this.args = args.isPresent() ? args.get() : new String[0];
 		this.file = file;
-		tokeniser = new Tokeniser();
+		tokeniser = new Tokeniser(this);
 	}
 
 	/**
@@ -59,22 +59,19 @@ public final class LifeTask {
 			String line;
 			String toTokenise = "";
 			while((line = br.readLine()) != null) {
-				toTokenise += line;
+				toTokenise += line + "\n";
 			}
 
-			Stack<Token> tokens = tokeniser.tokenise(toTokenise);
-			while(!tokens.empty()) {
-				handle(tokens.pop());
-			}
+			List<Token> methods = tokeniser.topLevel(toTokenise);
+
+			methods.stream().filter(t ->
+					t.getInfo() instanceof UserMethod
+			).forEach(System.out::println);
 			return true;
 		} catch(IOException ex) {
 			throw new LifeException("Could not read file. " + ex.getMessage());
 		}
 	}
 
-
-	private void handle(Token token) {
-
-	}
 
 }
