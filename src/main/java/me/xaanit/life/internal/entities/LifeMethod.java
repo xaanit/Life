@@ -53,29 +53,13 @@ public class LifeMethod {
 		}
 
 		String returnType = method.getReturnType().getName();
-		if(!equalsAny(returnType, "double", "char", "long", "int", "boolean", "float",
-				"java.lang.String", "void")) { // If the
+		if(!Type.isValidType(returnType, true)) { // If the
 			// return type isn't one of these, it's a problem
 			throw new LifeException(
 					"Methods can only return primitives (excluding byte and shor), Strings, or void!");
 		}
 	}
 
-	/**
-	 * Checks to see if an object is equal to a list of Objects
-	 *
-	 * @param o The object to check
-	 * @param objects The objects to check against
-	 * @return {@code true} if it does equal any; otherwise {@code false}
-	 */
-	private boolean equalsAny(Object o, Object... objects) {
-		for(Object object : objects) {
-			if(o.equals(object)) {
-				return true;
-			}
-		}
-		return false;
-	}
 
 	/**
 	 * Checks to see if the variables given are the same as this method

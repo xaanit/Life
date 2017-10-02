@@ -7,7 +7,24 @@ public class UserVariable extends Variable {
 
 	private final String name;
 	private final boolean constant;
-	private final boolean isGlobal;
+	private final boolean global;
+
+	/**
+	 * Makes a new User Variable
+	 *
+	 * @param type The type {@link Type}
+	 * @param info The info (i.e if type == {@link Type}.INT, this could be "4")
+	 * @param name The name to call it by
+	 * @param constant If the variable is final or not
+	 * @param global if the variable is global or not
+	 */
+	public UserVariable(final Type type, final String info, final String name,
+			final boolean constant, final boolean global) {
+		super(type, info);
+		this.name = name;
+		this.constant = constant;
+		this.global = global;
+	}
 
 	/**
 	 * Makes a new User Variable
@@ -18,11 +35,8 @@ public class UserVariable extends Variable {
 	 * @param constant If the variable is final or not
 	 */
 	public UserVariable(final Type type, final String info, final String name,
-			final boolean constant, final boolean isGlobal) {
-		super(type, info);
-		this.name = name;
-		this.constant = constant;
-		this.isGlobal = isGlobal;
+			final boolean constant) {
+		this(type, info, name, constant, false);
 	}
 
 	/**
@@ -49,7 +63,7 @@ public class UserVariable extends Variable {
 	 * @return If the variable is top level
 	 */
 	public boolean isGlobal() {
-		return isGlobal;
+		return global;
 	}
 
 	@Override
@@ -63,20 +77,14 @@ public class UserVariable extends Variable {
 
 		UserVariable that = (UserVariable) o;
 
-		if(constant != that.constant) {
-			return false;
-		}
-		if(isGlobal != that.isGlobal) {
-			return false;
-		}
-		return name != null ? name.equals(that.name) : that.name == null;
+		return name.equals(that.name) && getType() == that.getType();
 	}
 
 	@Override
 	public int hashCode() {
 		int result = name != null ? name.hashCode() : 0;
 		result = 31 * result + (constant ? 1 : 0);
-		result = 31 * result + (isGlobal ? 1 : 0);
+		result = 31 * result + (global ? 1 : 0);
 		return result;
 	}
 }

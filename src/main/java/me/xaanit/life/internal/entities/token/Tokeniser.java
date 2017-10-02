@@ -4,9 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import me.xaanit.life.internal.convert.MethodMatcher;
-import me.xaanit.life.internal.convert.Regex;
-import me.xaanit.life.internal.convert.Tokenisable;
+import me.xaanit.life.internal.matching.MethodMatcher;
+import me.xaanit.life.internal.matching.Regex;
+import me.xaanit.life.internal.matching.Tokenisable;
 import me.xaanit.life.internal.entities.Type;
 import me.xaanit.life.internal.entities.UserMethod;
 import me.xaanit.life.internal.entities.UserVariable;
@@ -24,7 +24,7 @@ public class Tokeniser {
 		this.task = task;
 	}
 
-	public List<Token> tokenise(String toTokenise) {
+	public List<Token> tokenise(String toTokenise, Token parent) {
 		List<Token> tokens = new ArrayList<>();
 		toTokenise = toTokenise.replaceAll(Regex.COMMENT.getRegex(), "")
 				.replaceAll(Regex.COMMENT_MULTILINE.getRegex(), "");
@@ -36,7 +36,11 @@ public class Tokeniser {
 		return tokens;
 	}
 
-	public List<Token> topLevel(String toTokenise) {
+	public List<Token> tokenise(String toTokenise) {
+		return tokenise(toTokenise, null);
+	}
+
+		public List<Token> topLevel(String toTokenise) {
 		List<Token> tokens = new ArrayList<>();
 		toTokenise = toTokenise.replaceAll(Regex.COMMENT.getRegex(), "")
 				.replaceAll(Regex.COMMENT_MULTILINE.getRegex(), "");

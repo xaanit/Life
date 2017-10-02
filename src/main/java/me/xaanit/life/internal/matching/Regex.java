@@ -1,4 +1,4 @@
-package me.xaanit.life.internal.convert;
+package me.xaanit.life.internal.matching;
 
 import java.util.regex.Pattern;
 

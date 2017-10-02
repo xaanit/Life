@@ -1,4 +1,4 @@
-package me.xaanit.life.internal.convert;
+package me.xaanit.life.internal.matching;
 
 import me.xaanit.life.internal.entities.token.Token;
 

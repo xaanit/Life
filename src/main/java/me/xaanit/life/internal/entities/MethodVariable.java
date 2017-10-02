@@ -40,10 +40,6 @@ public class MethodVariable {
 		}
 
 		MethodVariable that = (MethodVariable) o;
-
-		if(type != that.type) {
-			return false;
-		}
 		return name.equals(that.name);
 	}
 

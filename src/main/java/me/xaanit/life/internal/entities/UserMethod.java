@@ -74,18 +74,8 @@ public class UserMethod {
 		}
 
 		UserMethod that = (UserMethod) o;
-
-		if(isMain != that.isMain) {
-			return false;
-		}
 		// Probably incorrect - comparing Object[] arrays with Arrays.equals
 		if(!Arrays.equals(parameters, that.parameters)) {
-			return false;
-		}
-		if(returnType != that.returnType) {
-			return false;
-		}
-		if(body != null ? !body.equals(that.body) : that.body != null) {
 			return false;
 		}
 		return name != null ? name.equals(that.name) : that.name == null;
