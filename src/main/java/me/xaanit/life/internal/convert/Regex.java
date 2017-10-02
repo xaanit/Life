@@ -8,7 +8,7 @@ public enum Regex {
 	/**
 	 * Represents a method declaration. i.e {@code def void main() {}}
 	 */
-	METHOD_DECLARATION("def\\s+.+\\s+.+\\s*\\(.+\\)\\s*\\{(.|\\R)*}\\R*"),
+	METHOD_DECLARATION("def\\s*.+\\s+.+\\(.*\\)\\s\\{(.|\\R)*}"),
 
 	/**
 	 * Represents an if statement, i.e {@code if(true) {}}

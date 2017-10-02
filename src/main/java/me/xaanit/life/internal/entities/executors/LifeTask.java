@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import me.xaanit.life.internal.entities.LifeMethod;
+import me.xaanit.life.internal.entities.UserMethod;
 import me.xaanit.life.internal.entities.token.Token;
 import me.xaanit.life.internal.entities.token.Tokeniser;
 import me.xaanit.life.internal.exceptions.LifeException;
@@ -61,13 +62,11 @@ public final class LifeTask {
 				toTokenise += line + "\n";
 			}
 
-			List<Token> tokens = tokeniser.tokenise(toTokenise);
-			for(Token token : tokens) {
-				System.out.println(token.toString());
-				for(int i = 0; i < 10; i++) {
-					System.out.println();
-				}
-			}
+			List<Token> methods = tokeniser.topLevel(toTokenise);
+
+			methods.stream().filter(t ->
+					t.getInfo() instanceof UserMethod
+			).forEach(System.out::println);
 			return true;
 		} catch(IOException ex) {
 			throw new LifeException("Could not read file. " + ex.getMessage());
