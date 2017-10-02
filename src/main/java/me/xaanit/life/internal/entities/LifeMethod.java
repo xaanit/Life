@@ -124,23 +124,4 @@ public class LifeMethod {
 	}
 
 
-	public class MethodVariable {
-
-		private final Type type;
-
-		public MethodVariable(final Type type) {
-			this.type = type;
-		}
-
-		public Type getType() {
-			return type;
-		}
-
-		@Override
-		public String toString() {
-			return "MethodVariable{" +
-					"type=" + type +
-					'}';
-		}
-	}
 }

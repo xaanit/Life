@@ -1,6 +1,6 @@
 package me.xaanit.life.internal.entities;
 
-import me.xaanit.life.internal.entities.LifeMethod.MethodVariable;
+import java.util.Arrays;
 
 public class UserMethod {
 
@@ -47,5 +47,14 @@ public class UserMethod {
 
 	public String getName() {
 		return name;
+	}
+
+	public boolean isMain() {
+		return isMain;
+	}
+
+	@Override
+	public String toString() {
+		return "UserMethod{\n\nparameters=" + Arrays.toString(parameters) + "\n\nreturnType=" + returnType + "\n\nbody=" + body + "\n\nname=" + name + "\n\nisMain=" + isMain + "\n\n}";
 	}
 }

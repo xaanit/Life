@@ -43,7 +43,7 @@ public final class LifeTask {
 		this.currentForRepitions = maxForRepitions < 0 ? null : new AtomicInteger();
 		this.args = args.isPresent() ? args.get() : new String[0];
 		this.file = file;
-		tokeniser = new Tokeniser();
+		tokeniser = new Tokeniser(this);
 	}
 
 	/**

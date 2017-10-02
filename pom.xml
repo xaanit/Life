@@ -75,11 +75,6 @@
     </plugins>
   </build>
   <dependencies>
-    <dependency>
-      <groupId>org.parboiled</groupId>
-      <artifactId>parboiled-java</artifactId>
-      <version>1.1.8</version>
-    </dependency>
   </dependencies>
 
 </project>

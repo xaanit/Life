@@ -4,6 +4,7 @@ public enum TokenType {
 	METHOD,
 	VARIABLE,
 	CONDITIONAL,
-	DATA_TYPE
+	DATA_TYPE,
+	STATEMENT
 
 }

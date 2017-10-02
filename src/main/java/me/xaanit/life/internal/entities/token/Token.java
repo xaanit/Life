@@ -1,9 +1,5 @@
 package me.xaanit.life.internal.entities.token;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 /**
  * Represents a token found by the tokeniser.
  */
@@ -11,17 +7,16 @@ public class Token<T> {
 
 	private final String line;
 	private final TokenType type;
-	private final List<Token> children;
 	private final Token parent;
 	private final T info;
 
-	protected Token(final String line, final TokenType type, final T info) {
+	public Token(final String line, final TokenType type, final T info) {
 		this.line = line;
 		this.type = type;
-		this.children = new ArrayList<>();
 		this.parent = null;
 		this.info = info;
 	}
+
 
 	/**
 	 * Gets the line (i.e {@code if(x == 4)}
@@ -42,15 +37,6 @@ public class Token<T> {
 	}
 
 	/**
-	 * Gets any children this token has (If it's a method)
-	 *
-	 * @return The children, in an immutable list
-	 */
-	public List<Token> getChildren() {
-		return Collections.unmodifiableList(children);
-	}
-
-	/**
 	 * Gets the parent token. I.e a method
 	 *
 	 * @return The parent
@@ -68,5 +54,11 @@ public class Token<T> {
 	 */
 	public T getInfo() {
 		return info;
+	}
+
+	@Override
+	public String toString() {
+		return "TOKEN{\n\nline=" + line + "\n\ntype=" + type + "\n\nparent=" + (parent == null ? "null"
+				: parent) + "\n\ninfo=" + info + "\n\n}";
 	}
 }
