@@ -67,13 +67,11 @@ public class ConditionalMatcher {
 						break;
 					}
 				}
-				if(after.isEmpty() && !before.isEmpty()) {
-					before += "&&";
-				}
+
 				System.out.println("find: " + find);
 				System.out.println("before: " + before);
 				System.out.println("after: " + after);
-				System.out.printf("Full: %smatch(%s)%s\n",
+				System.out.printf("Full: %s match(%s) %s\n",
 						before.isEmpty() ? "" : before + (!after.isEmpty() ? " && " : ""), find,
 						after.isEmpty() ? "" : " && " + after);
 
@@ -91,9 +89,11 @@ public class ConditionalMatcher {
 		start = start == -1 ? 0 : start;
 		StringBuilder res = new StringBuilder();
 		for(int i = start; i < end; i++) {
-			res.append(args[i]).append(i == end - 1 ? "" : " ");
+			res.append(Tokenisable.trim(args[i])).append(i == end - 1 ? "" : " ");
 		}
-		return res.toString();
+		String ret = res.toString();
+		System.out.println("RETURNING: " + ret);
+		return ret;
 	}
 
 
