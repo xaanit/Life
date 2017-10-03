@@ -17,7 +17,7 @@ public class ConditionalMatcher {
 			throw new TokeniserException(conditional + " is not a valid conditional!");
 		}
 		if(!conditional.contains("(") && !conditional.contains(")")) {
-			return handle(conditional);
+			return handle(conditional, false);
 		} else {
 			int lastIndexOfOpen = -1;
 			int firstIndexOfClosed = conditional.length();
@@ -35,17 +35,24 @@ public class ConditionalMatcher {
 			}
 			String temp = conditional.substring(lastIndexOfOpen, firstIndexOfClosed + 1);
 			System.out.println("TEMP: " + temp);
-			conditional = conditional.replace(temp, handle(temp) + "");
+			conditional = conditional.replace(temp, handle(temp, conditional.charAt(lastIndexOfOpen - 1) == '!') + "");
 			System.out.println("CONDITIONAL: " + conditional);
 			System.out.println();
 			return match(conditional);
 		}
 	}
 
-	private static boolean handle(String part) {
-		boolean bool = false;
+	private static boolean handle(String part, boolean isFalse) {
+		part = Tokenisable.trim(part);
+		if(part.equals("true") || part.equals("false")) {
+			return part.equals("true");
+		} else {
+			String temp = "";
+			boolean bool = false;
+			boolean not = false;
 
-		return bool;
+			return handle(part.replace(temp, Boolean.toString(bool)), not);
+		}
 	}
 
 
