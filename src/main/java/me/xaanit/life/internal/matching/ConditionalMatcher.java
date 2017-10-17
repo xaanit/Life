@@ -45,9 +45,9 @@ public class ConditionalMatcher {
 	}
 
 	private static boolean handle(String part, boolean isFalse) {
-		part = part.replaceAll("\\s+", "");
+		part = Tokenisable.trim(part);
 		if(part.equals("true") || part.equals("false")) {
-			return part.equals("true");
+			return isFalse ? part.equals("false") : part.equals("true");
 		} else {
 			if(part.contains("&&")) {
 				String[] split = part.split("&&");
@@ -75,6 +75,9 @@ public class ConditionalMatcher {
 						before.isEmpty() ? "" : before + (!after.isEmpty() ? " && " : ""), find,
 						after.isEmpty() ? "" : " && " + after);
 
+				String full = before.isEmpty() ? "" : before + (!after.isEmpty() ? " && " : "") + find +
+						(after.isEmpty() ? "" : " && ") + after;
+
 				return true;
 			}
 			String temp = "";
@@ -83,6 +86,298 @@ public class ConditionalMatcher {
 			return handle(part.replace(temp, Boolean.toString(bool)), not);
 		}
 	}
+
+
+	private static boolean handleNumbers(String str) {
+		boolean bool;
+		String[] arr = str.split("\\s+");
+		if(arr.length != 3) {
+			throw new TokeniserException("Invalid conditional: " + str);
+		}
+		try {
+			check(arr[0]);
+			check(arr[2]);
+		} catch(NumberFormatException ex) {
+			throw new TokeniserException("Invalid conditional: " + str);
+		}
+		switch(arr[1]) {
+			case "<":
+				bool = lessThan(convert(arr[0]), convert(arr[2]));
+				break;
+			case ">":
+				bool = !lessThan(convert(arr[0]), convert(arr[2]));
+				break;
+			case "==":
+				bool = equal(convert(arr[0]), convert(arr[2]));
+				break;
+			case "!=":
+				bool = !equal(convert(arr[0]), convert(arr[2]));
+				break;
+			case "<=":
+				bool =
+						equal(convert(arr[0]), convert(arr[2])) || lessThan(convert(arr[0]), convert(arr[2]));
+				break;
+			case ">=":
+				bool =
+						equal(convert(arr[0]), convert(arr[2])) || !lessThan(convert(arr[0]), convert(arr[2]));
+				break;
+			default:
+				throw new TokeniserException("Invalid conditional: " + str);
+		}
+		return bool;
+	}
+
+
+	private static Object convert(String str) {
+		if(str.matches(Regex.FLOAT.getRegex())) {
+			return Float.parseFloat(str.replaceAll("[fF]", ""));
+		} else if(str.matches(Regex.DOUBLE.getRegex())) {
+			return Double.parseDouble(str.replaceAll("[dD]", ""));
+		} else if(str.matches(Regex.LONG.getRegex())) {
+			return Long.parseLong(str.replaceAll("[lL]", ""));
+		} else {
+			return Integer.parseInt(str);
+		}
+	}
+
+	private static boolean lessThan(Object one, Object two) {
+		//
+		if(one instanceof Integer) {
+			int _1 = (int) one;
+			if(two instanceof Integer) {
+				int _2 = (int) two;
+				return _1 < _2;
+			}
+
+			if(two instanceof Double) {
+				double _2 = (double) two;
+				return _1 < _2;
+			}
+
+			if(two instanceof Long) {
+				long _2 = (long) two;
+				return _1 < _2;
+			}
+
+			if(two instanceof Float) {
+				float _2 = (float) two;
+				return _1 < _2;
+			}
+		}
+
+		//
+		if(one instanceof Double) {
+			double _1 = (double) one;
+			if(two instanceof Integer) {
+				int _2 = (int) two;
+				return _1 < _2;
+			}
+
+			if(two instanceof Double) {
+				double _2 = (double) two;
+				return _1 < _2;
+			}
+
+			if(two instanceof Long) {
+				long _2 = (long) two;
+				return _1 < _2;
+			}
+
+			if(two instanceof Float) {
+				float _2 = (float) two;
+				return _1 < _2;
+			}
+		}
+
+		//
+		if(one instanceof Float) {
+			float _1 = (float) one;
+			if(two instanceof Integer) {
+				int _2 = (int) two;
+				return _1 < _2;
+			}
+
+			if(two instanceof Double) {
+				double _2 = (double) two;
+				return _1 < _2;
+			}
+
+			if(two instanceof Long) {
+				long _2 = (long) two;
+				return _1 < _2;
+			}
+
+			if(two instanceof Float) {
+				float _2 = (float) two;
+				return _1 < _2;
+			}
+		}
+
+		//
+		if(one instanceof Long) {
+			long _1 = (long) one;
+			if(two instanceof Integer) {
+				int _2 = (int) two;
+				return _1 < _2;
+			}
+
+			if(two instanceof Double) {
+				double _2 = (double) two;
+				return _1 < _2;
+			}
+
+			if(two instanceof Long) {
+				long _2 = (long) two;
+				return _1 < _2;
+			}
+
+			if(two instanceof Float) {
+				float _2 = (float) two;
+				return _1 < _2;
+			}
+		}
+
+		return false; // Shouldn't ever reach. But yay failsafes.
+	}
+
+	private static boolean equal(Object one, Object two) {
+		//
+		if(one instanceof Integer) {
+			int _1 = (int) one;
+			if(two instanceof Integer) {
+				int _2 = (int) two;
+				return _1 == _2;
+			}
+
+			if(two instanceof Double) {
+				double _2 = (double) two;
+				return _1 == _2;
+			}
+
+			if(two instanceof Long) {
+				long _2 = (long) two;
+				return _1 == _2;
+			}
+
+			if(two instanceof Float) {
+				float _2 = (float) two;
+				return _1 == _2;
+			}
+		}
+
+		//
+		if(one instanceof Double) {
+			double _1 = (double) one;
+			if(two instanceof Integer) {
+				int _2 = (int) two;
+				return _1 == _2;
+			}
+
+			if(two instanceof Double) {
+				double _2 = (double) two;
+				return _1 == _2;
+			}
+
+			if(two instanceof Long) {
+				long _2 = (long) two;
+				return _1 == _2;
+			}
+
+			if(two instanceof Float) {
+				float _2 = (float) two;
+				return _1 == _2;
+			}
+		}
+
+		//
+		if(one instanceof Float) {
+			float _1 = (float) one;
+			if(two instanceof Integer) {
+				int _2 = (int) two;
+				return _1 == _2;
+			}
+
+			if(two instanceof Double) {
+				double _2 = (double) two;
+				return _1 == _2;
+			}
+
+			if(two instanceof Long) {
+				long _2 = (long) two;
+				return _1 == _2;
+			}
+
+			if(two instanceof Float) {
+				float _2 = (float) two;
+				return _1 == _2;
+			}
+		}
+
+		//
+		if(one instanceof Long) {
+			long _1 = (long) one;
+			if(two instanceof Integer) {
+				int _2 = (int) two;
+				return _1 == _2;
+			}
+
+			if(two instanceof Double) {
+				double _2 = (double) two;
+				return _1 == _2;
+			}
+
+			if(two instanceof Long) {
+				long _2 = (long) two;
+				return _1 == _2;
+			}
+
+			if(two instanceof Float) {
+				float _2 = (float) two;
+				return _1 == _2;
+			}
+		}
+
+		return false; // Shouldn't ever reach. But yay failsafes.
+	}
+
+
+	private static void check(String str) throws NumberFormatException {
+		int f = 0;
+		int t = 0;
+
+		t++;
+		try {
+			Integer.parseInt(str);
+		} catch(NumberFormatException ignored) {
+			f++;
+		}
+
+		t++;
+		try {
+			Long.parseLong(str);
+		} catch(NumberFormatException ignored) {
+			f++;
+		}
+
+		t++;
+		try {
+			Float.parseFloat(str);
+		} catch(NumberFormatException ignored) {
+			f++;
+		}
+
+		t++;
+		try {
+			Double.parseDouble(str);
+		} catch(NumberFormatException ex) {
+			f++;
+		}
+
+		if(t == f) { // Total is failed. Meaning not a number.
+			throw new NumberFormatException();
+		}
+	}
+
 
 	private static String combine(String[] args, int start, int end) {
 		end = end == -1 ? args.length : end;

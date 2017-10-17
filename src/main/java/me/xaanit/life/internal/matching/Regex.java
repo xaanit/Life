@@ -25,6 +25,26 @@ public enum Regex {
 	 */
 	WHILE("while\\s*\\(.+\\)\\s*\\{(\\R|.)*}\\R*"),
 
+	/**
+	 * Represents a double.
+	 */
+	DOUBLE("[0-9]+\\.[0-9]+(D|d)?"),
+
+	/**
+	 * Represents an integer.
+	 */
+	INT("[0-9]+"),
+
+	/**
+	 * Represents a long, a 64 bit integer.
+	 */
+	LONG("[0-9]+(L|l)"),
+
+	/**
+	 * Represents a floating point number.
+	 */
+	FLOAT("[0-9]+\\.[0-9]+(F|f)"),
+
 	// Grabbing of information
 	/**
 	 * Represents variable creation by the user, i.e {@code const String author = "xaanit";} or {@code

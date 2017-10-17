@@ -40,7 +40,7 @@ public class Tokeniser {
 		return tokenise(toTokenise, null);
 	}
 
-		public List<Token> topLevel(String toTokenise) {
+	public List<Token> topLevel(String toTokenise) {
 		List<Token> tokens = new ArrayList<>();
 		toTokenise = toTokenise.replaceAll(Regex.COMMENT.getRegex(), "")
 				.replaceAll(Regex.COMMENT_MULTILINE.getRegex(), "");
@@ -78,6 +78,8 @@ public class Tokeniser {
 					if(!valid(value, Type.valueOf(type.toUpperCase()))) {
 						throw new TokeniserException("Value is not valid for type!");
 					}
+					variables.add(variable.getInfo());
+					tokens.add(variable);
 				} else {
 					throw new TokeniserException(
 							"You can only declare methods and variables at the top level!");
