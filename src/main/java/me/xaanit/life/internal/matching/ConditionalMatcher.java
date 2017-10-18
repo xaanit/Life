@@ -73,9 +73,9 @@ public class ConditionalMatcher {
 		}
 		switch(arr[1]) {
 			case "==":
-				return arr[0].charAt(1) == arr[0].charAt(1);
+				return arr[0].charAt(1) == arr[2].charAt(1);
 			case "!=":
-				return arr[0].charAt(1) != arr[0].charAt(1);
+				return arr[0].charAt(1) != arr[2].charAt(1);
 			default:
 				throw new TokeniserException("Invalid conditional: " + str);
 		}
