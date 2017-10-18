@@ -1,6 +1,5 @@
 package me.xaanit.life.internal.matching;
 
-import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 import me.xaanit.life.internal.exceptions.TokeniserException;
 
@@ -50,40 +49,65 @@ public class ConditionalMatcher {
 			return isFalse ? part.equals("false") : part.equals("true");
 		} else {
 			if(part.contains("&&")) {
-				String[] split = part.split("&&");
-				if(split.length == 1) {
-					throw new TokeniserException("Invalid conditional in if statement!");
-				}
-				String find = "";
-				String before = "";
-				String after = "";
-				System.out.println("SPLIT: " + Arrays.toString(split));
-				for(int i = 0; i < split.length; i++) {
-					if(!split[i].equals("true") && !split[i].equals("false")) {
-						find = split[i];
-						before = Tokenisable.trim(combine(split, 0, i)).replaceAll("&&", "")
-								.replaceAll("\\s+", " && ");
-						after = Tokenisable.trim(combine(split, i + 1, -1)).replaceAll("\\s+", " && ");
-						break;
-					}
-				}
-
-				System.out.println("find: " + find);
-				System.out.println("before: " + before);
-				System.out.println("after: " + after);
-				System.out.printf("Full: %s match(%s) %s\n",
-						before.isEmpty() ? "" : before + (!after.isEmpty() ? " && " : ""), find,
-						after.isEmpty() ? "" : " && " + after);
-
-				String full = before.isEmpty() ? "" : before + (!after.isEmpty() ? " && " : "") + find +
-						(after.isEmpty() ? "" : " && ") + after;
-
-				return true;
+				return handleAnd(part);
+			}
+			if(part.contains("||")) {
+				return handleOr(part);
 			}
 			String temp = "";
 			boolean bool = false;
 			boolean not = false;
 			return handle(part.replace(temp, Boolean.toString(bool)), not);
+		}
+	}
+
+	public static boolean handleOr(String str) {
+		System.out.println("OR: " + str);
+		if(str.equals("true") || str.equals("false")) {
+			return str.equals("true");
+		}
+		String[] arr = str.split("\\|\\|");
+		if(arr.length == 2) {
+			if(!arr[0].equals("true") && !arr[0].equals("false")) {
+				System.out.println("OR HAD TO GET ARR[0] " + arr[0]);
+				arr[0] = handle(arr[0], false) + "";
+				System.out.println("ARR[0] AFTER (OR) " + arr[0]);
+			}
+			if(!arr[1].equals("true") && !arr[1].equals("false")) {
+				System.out.println("OR HAD TO GET ARR[1]");
+				arr[1] = handle(arr[1], false) + "";
+				System.out.println("ARR[1] AFTER (OR) " + arr[0]);
+			}
+
+			return arr[0].equals("true") || arr[1].equals("true");
+
+		} else {
+			String first = handleOr(combine(arr, 0, 2, "||")) + "";
+			String second = combine(arr, 2, arr.length, "||");
+			return handleOr(first + (!second.isEmpty() ? "||" : "") + second);
+		}
+	}
+
+	public static boolean handleAnd(String str) {
+		System.out.println("AND: " + str);
+		if(str.equals("true") || str.equals("false")) {
+			return str.equals("true");
+		}
+		String[] arr = str.split("&&");
+		if(arr.length == 2) {
+			if(!arr[0].equals("true") && !arr[0].equals("false")) {
+				arr[0] = handle(arr[0], false) + "";
+			}
+			if(!arr[1].equals("true") && !arr[1].equals("false")) {
+				arr[1] = handle(arr[1], false) + "";
+			}
+
+			return arr[0].equals("true") && arr[1].equals("true");
+
+		} else {
+			String first = handleAnd(combine(arr, 0, 2, "&&")) + "";
+			String second = combine(arr, 2, arr.length, "&&");
+			return handleAnd(first + (!second.isEmpty() ? "&&" : "") + second);
 		}
 	}
 
@@ -378,19 +402,28 @@ public class ConditionalMatcher {
 		}
 	}
 
-
 	private static String combine(String[] args, int start, int end) {
+		return combine(args, start, end, " ");
+	}
+
+	private static String combine(String[] args, int start, int end, CharSequence operator) {
 		end = end == -1 ? args.length : end;
 		start = start == -1 ? 0 : start;
 		StringBuilder res = new StringBuilder();
 		for(int i = start; i < end; i++) {
-			res.append(Tokenisable.trim(args[i])).append(i == end - 1 ? "" : " ");
+			res.append(Tokenisable.trim(args[i])).append(i == end - 1 ? "" : operator);
 		}
 		String ret = res.toString();
-		System.out.println("RETURNING: " + ret);
 		return ret;
 	}
 
+
+	private static String[] trim(String[] arr) {
+		for(int i = 0; i < arr.length; i++) {
+			arr[i] = Tokenisable.trim(arr[i]);
+		}
+		return arr;
+	}
 
 	private static boolean validate(String conditional) {
 		int open = 0;
