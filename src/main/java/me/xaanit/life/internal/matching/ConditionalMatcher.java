@@ -1,6 +1,9 @@
 package me.xaanit.life.internal.matching;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
 import me.xaanit.life.internal.exceptions.TokeniserException;
 
 public class ConditionalMatcher {
@@ -61,22 +64,69 @@ public class ConditionalMatcher {
 		}
 	}
 
+
+	public static boolean handleChars(String str) {
+		str = str.replace("' '", "'--'");
+		String[] arr = str.split("\\s+");
+		for(int i = 0; i < arr.length; i++) {
+			arr[i] = arr[i].replace("'--'", "' '");
+		}
+		switch(arr[1]) {
+			case "==":
+				return arr[0].charAt(1) == arr[0].charAt(1);
+			case "!=":
+				return arr[0].charAt(1) != arr[0].charAt(1);
+			default:
+				throw new TokeniserException("Invalid conditional: " + str);
+		}
+	}
+
+	public static boolean handleStrings(String str) {
+		String replace = "-";
+		while(str.contains(replace)) {
+			replace += "-";
+		}
+
+		Matcher matcher = Regex.STRING.compile().matcher(str);
+		List<String> list = new ArrayList<>();
+		while(matcher.find()) {
+			list.add(matcher.group());
+		}
+		for(String string : list) {
+			str = str.replace(string, string.replace("\\s", replace));
+		}
+
+		String[] arr = str.split("\\s+");
+		for(int i = 0; i < arr.length; i++) {
+			arr[i] = arr[i].replace(replace, " ");
+		}
+		if(arr.length != 3) {
+			throw new TokeniserException("Invalid conditional: " + str);
+		}
+
+		switch(arr[1]) {
+			case "==":
+				return arr[0].equals(arr[2]);
+			case "!=":
+				return !arr[0].equals(arr[2]);
+			case "===":
+				return arr[0].equalsIgnoreCase(arr[2]);
+			default:
+				throw new TokeniserException("Invalid conditional: " + str);
+		}
+	}
+
 	public static boolean handleOr(String str) {
-		System.out.println("OR: " + str);
 		if(str.equals("true") || str.equals("false")) {
 			return str.equals("true");
 		}
-		String[] arr = str.split("\\|\\|");
+		String[] arr = trim(str.split("\\|\\|"));
 		if(arr.length == 2) {
 			if(!arr[0].equals("true") && !arr[0].equals("false")) {
-				System.out.println("OR HAD TO GET ARR[0] " + arr[0]);
 				arr[0] = handle(arr[0], false) + "";
-				System.out.println("ARR[0] AFTER (OR) " + arr[0]);
 			}
 			if(!arr[1].equals("true") && !arr[1].equals("false")) {
-				System.out.println("OR HAD TO GET ARR[1]");
 				arr[1] = handle(arr[1], false) + "";
-				System.out.println("ARR[1] AFTER (OR) " + arr[0]);
 			}
 
 			return arr[0].equals("true") || arr[1].equals("true");
@@ -89,11 +139,10 @@ public class ConditionalMatcher {
 	}
 
 	public static boolean handleAnd(String str) {
-		System.out.println("AND: " + str);
 		if(str.equals("true") || str.equals("false")) {
 			return str.equals("true");
 		}
-		String[] arr = str.split("&&");
+		String[] arr = trim(str.split("&&"));
 		if(arr.length == 2) {
 			if(!arr[0].equals("true") && !arr[0].equals("false")) {
 				arr[0] = handle(arr[0], false) + "";
@@ -112,7 +161,7 @@ public class ConditionalMatcher {
 	}
 
 
-	private static boolean handleNumbers(String str) {
+	public static boolean handleNumbers(String str) {
 		boolean bool;
 		String[] arr = str.split("\\s+");
 		if(arr.length != 3) {
@@ -159,8 +208,14 @@ public class ConditionalMatcher {
 			return Double.parseDouble(str.replaceAll("[dD]", ""));
 		} else if(str.matches(Regex.LONG.getRegex())) {
 			return Long.parseLong(str.replaceAll("[lL]", ""));
-		} else {
+		} else if(str.matches(Regex.INT.getRegex())) {
 			return Integer.parseInt(str);
+		} else if(str.matches(Regex.CHAR.getRegex())) {
+			return str.charAt(1);
+		} else if(str.matches(Regex.STRING.getRegex())) {
+			return str;
+		} else {
+			throw new TokeniserException("");
 		}
 	}
 

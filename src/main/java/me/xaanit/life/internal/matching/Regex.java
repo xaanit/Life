@@ -45,6 +45,16 @@ public enum Regex {
 	 */
 	FLOAT("[0-9]+\\.[0-9]+(F|f)"),
 
+	/**
+	 * Represents a string. (A collection of characters)
+	 */
+	STRING("\"[^\"]*\""),
+
+	/**
+	 * Represents a character. i.e 'a'
+	 */
+	CHAR("'[^']{1}'"),
+
 	// Grabbing of information
 	/**
 	 * Represents variable creation by the user, i.e {@code const String author = "xaanit";} or {@code
