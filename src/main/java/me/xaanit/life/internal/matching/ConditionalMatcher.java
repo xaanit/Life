@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import me.xaanit.life.internal.exceptions.TokeniserException;
 
 public class ConditionalMatcher {
@@ -46,7 +47,7 @@ public class ConditionalMatcher {
 		}
 	}
 
-	private static boolean handle(String part, boolean isFalse) {
+	public static boolean handle(String part, boolean isFalse) {
 		part = Tokenisable.trim(part);
 		if(part.equals("true") || part.equals("false")) {
 			return isFalse ? part.equals("false") : part.equals("true");
@@ -58,6 +59,23 @@ public class ConditionalMatcher {
 				return handleOr(part);
 			}
 			String temp = "";
+			Pattern p = Regex.STRING.compile();
+			Matcher m = p.matcher(part);
+			String replace = "-";
+			while(part.contains(replace)) {
+				replace += "-";
+			}
+			while(m.find()) {
+				String t = m.group();
+				t = t.replaceAll(" ", replace);
+				part = part.replace(m.group(), t);
+			}
+			System.out.println(part);
+
+			String[] parts = part.split(" ");
+			if(parts.length < 3) {
+				throw new TokeniserException("Invalid conditional! Part: " + part);
+			}
 			boolean bool = false;
 			boolean not = false;
 			return handle(part.replace(temp, Boolean.toString(bool)), not);
@@ -199,6 +217,10 @@ public class ConditionalMatcher {
 		}
 		return bool;
 	}
+
+//	private static Type find(String str) {
+
+	//}
 
 
 	private static Object convert(String str) {

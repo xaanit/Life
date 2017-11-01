@@ -106,9 +106,11 @@ public enum Regex {
 	COMMENT("\\/\\/.*");
 
 	private final String regex;
+	private final Pattern pattern;
 
 	Regex(final String regex) {
 		this.regex = regex;
+		this.pattern = Pattern.compile(regex);
 	}
 
 	public String getRegex() {
@@ -116,6 +118,6 @@ public enum Regex {
 	}
 
 	public Pattern compile() {
-		return Pattern.compile(regex);
+		return pattern;
 	}
 }
