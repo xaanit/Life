@@ -1,495 +1,553 @@
 package me.xaanit.life.internal.matching;
 
+import me.xaanit.life.internal.entities.Type;
+import me.xaanit.life.internal.exceptions.TokeniserException;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
-import me.xaanit.life.internal.exceptions.TokeniserException;
+import java.util.regex.Pattern;
 
 public class ConditionalMatcher {
 
-	private static AtomicInteger integer = new AtomicInteger();
-
-	public static boolean match(String conditional) {
-		System.out.println("CONDITIONAL: " + conditional);
-		if(integer.get() == 10) {
-			System.exit(0);
-		}
-		integer.incrementAndGet();
-		if(!validate(conditional)) {
-			throw new TokeniserException(conditional + " is not a valid conditional!");
-		}
-		if(!conditional.contains("(") && !conditional.contains(")")) {
-			return handle(conditional, false);
-		} else {
-			int lastIndexOfOpen = -1;
-			int firstIndexOfClosed = conditional.length();
-			for(int i = 0; i < conditional.length(); i++) {
-				if(conditional.charAt(i) == '(') {
-					if(i > lastIndexOfOpen) {
-						lastIndexOfOpen = i;
-					}
-				}
-				if(conditional.charAt(i) == ')') {
-					if(i < firstIndexOfClosed) {
-						firstIndexOfClosed = i;
-					}
-				}
-			}
-			String temp = conditional.substring(lastIndexOfOpen, firstIndexOfClosed + 1);
-			System.out.println("TEMP: " + temp);
-			conditional = conditional
-					.replace(temp, handle(temp, conditional.charAt(lastIndexOfOpen - 1) == '!') + "");
-			System.out.println("CONDITIONAL: " + conditional);
-			System.out.println();
-			return match(conditional);
-		}
-	}
-
-	private static boolean handle(String part, boolean isFalse) {
-		part = Tokenisable.trim(part);
-		if(part.equals("true") || part.equals("false")) {
-			return isFalse ? part.equals("false") : part.equals("true");
-		} else {
-			if(part.contains("&&")) {
-				return handleAnd(part);
-			}
-			if(part.contains("||")) {
-				return handleOr(part);
-			}
-			String temp = "";
-			boolean bool = false;
-			boolean not = false;
-			return handle(part.replace(temp, Boolean.toString(bool)), not);
-		}
-	}
-
-
-	public static boolean handleChars(String str) {
-		str = str.replace("' '", "'--'");
-		String[] arr = str.split("\\s+");
-		for(int i = 0; i < arr.length; i++) {
-			arr[i] = arr[i].replace("'--'", "' '");
-		}
-		switch(arr[1]) {
-			case "==":
-				return arr[0].charAt(1) == arr[2].charAt(1);
-			case "!=":
-				return arr[0].charAt(1) != arr[2].charAt(1);
-			default:
-				throw new TokeniserException("Invalid conditional: " + str);
-		}
-	}
-
-	public static boolean handleStrings(String str) {
-		String replace = "-";
-		while(str.contains(replace)) {
-			replace += "-";
-		}
-
-		Matcher matcher = Regex.STRING.compile().matcher(str);
-		List<String> list = new ArrayList<>();
-		while(matcher.find()) {
-			list.add(matcher.group());
-		}
-		for(String string : list) {
-			str = str.replace(string, string.replace("\\s", replace));
-		}
-
-		String[] arr = str.split("\\s+");
-		for(int i = 0; i < arr.length; i++) {
-			arr[i] = arr[i].replace(replace, " ");
-		}
-		if(arr.length != 3) {
-			throw new TokeniserException("Invalid conditional: " + str);
-		}
-
-		switch(arr[1]) {
-			case "==":
-				return arr[0].equals(arr[2]);
-			case "!=":
-				return !arr[0].equals(arr[2]);
-			case "===":
-				return arr[0].equalsIgnoreCase(arr[2]);
-			default:
-				throw new TokeniserException("Invalid conditional: " + str);
-		}
-	}
-
-	public static boolean handleOr(String str) {
-		if(str.equals("true") || str.equals("false")) {
-			return str.equals("true");
-		}
-		String[] arr = trim(str.split("\\|\\|"));
-		if(arr.length == 2) {
-			if(!arr[0].equals("true") && !arr[0].equals("false")) {
-				arr[0] = handle(arr[0], false) + "";
-			}
-			if(!arr[1].equals("true") && !arr[1].equals("false")) {
-				arr[1] = handle(arr[1], false) + "";
-			}
-
-			return arr[0].equals("true") || arr[1].equals("true");
-
-		} else {
-			String first = handleOr(combine(arr, 0, 2, "||")) + "";
-			String second = combine(arr, 2, arr.length, "||");
-			return handleOr(first + (!second.isEmpty() ? "||" : "") + second);
-		}
-	}
-
-	public static boolean handleAnd(String str) {
-		if(str.equals("true") || str.equals("false")) {
-			return str.equals("true");
-		}
-		String[] arr = trim(str.split("&&"));
-		if(arr.length == 2) {
-			if(!arr[0].equals("true") && !arr[0].equals("false")) {
-				arr[0] = handle(arr[0], false) + "";
-			}
-			if(!arr[1].equals("true") && !arr[1].equals("false")) {
-				arr[1] = handle(arr[1], false) + "";
-			}
-
-			return arr[0].equals("true") && arr[1].equals("true");
-
-		} else {
-			String first = handleAnd(combine(arr, 0, 2, "&&")) + "";
-			String second = combine(arr, 2, arr.length, "&&");
-			return handleAnd(first + (!second.isEmpty() ? "&&" : "") + second);
-		}
-	}
-
-
-	public static boolean handleNumbers(String str) {
-		boolean bool;
-		String[] arr = str.split("\\s+");
-		if(arr.length != 3) {
-			throw new TokeniserException("Invalid conditional: " + str);
-		}
-		try {
-			check(arr[0]);
-			check(arr[2]);
-		} catch(NumberFormatException ex) {
-			throw new TokeniserException("Invalid conditional: " + str);
-		}
-		switch(arr[1]) {
-			case "<":
-				bool = lessThan(convert(arr[0]), convert(arr[2]));
-				break;
-			case ">":
-				bool = !lessThan(convert(arr[0]), convert(arr[2]));
-				break;
-			case "==":
-				bool = equal(convert(arr[0]), convert(arr[2]));
-				break;
-			case "!=":
-				bool = !equal(convert(arr[0]), convert(arr[2]));
-				break;
-			case "<=":
-				bool =
-						equal(convert(arr[0]), convert(arr[2])) || lessThan(convert(arr[0]), convert(arr[2]));
-				break;
-			case ">=":
-				bool =
-						equal(convert(arr[0]), convert(arr[2])) || !lessThan(convert(arr[0]), convert(arr[2]));
-				break;
-			default:
-				throw new TokeniserException("Invalid conditional: " + str);
-		}
-		return bool;
-	}
-
-
-	private static Object convert(String str) {
-		if(str.matches(Regex.FLOAT.getRegex())) {
-			return Float.parseFloat(str.replaceAll("[fF]", ""));
-		} else if(str.matches(Regex.DOUBLE.getRegex())) {
-			return Double.parseDouble(str.replaceAll("[dD]", ""));
-		} else if(str.matches(Regex.LONG.getRegex())) {
-			return Long.parseLong(str.replaceAll("[lL]", ""));
-		} else if(str.matches(Regex.INT.getRegex())) {
-			return Integer.parseInt(str);
-		} else if(str.matches(Regex.CHAR.getRegex())) {
-			return str.charAt(1);
-		} else if(str.matches(Regex.STRING.getRegex())) {
-			return str;
-		} else {
-			throw new TokeniserException("");
-		}
-	}
-
-	private static boolean lessThan(Object one, Object two) {
-		//
-		if(one instanceof Integer) {
-			int _1 = (int) one;
-			if(two instanceof Integer) {
-				int _2 = (int) two;
-				return _1 < _2;
-			}
-
-			if(two instanceof Double) {
-				double _2 = (double) two;
-				return _1 < _2;
-			}
-
-			if(two instanceof Long) {
-				long _2 = (long) two;
-				return _1 < _2;
-			}
-
-			if(two instanceof Float) {
-				float _2 = (float) two;
-				return _1 < _2;
-			}
-		}
-
-		//
-		if(one instanceof Double) {
-			double _1 = (double) one;
-			if(two instanceof Integer) {
-				int _2 = (int) two;
-				return _1 < _2;
-			}
-
-			if(two instanceof Double) {
-				double _2 = (double) two;
-				return _1 < _2;
-			}
-
-			if(two instanceof Long) {
-				long _2 = (long) two;
-				return _1 < _2;
-			}
-
-			if(two instanceof Float) {
-				float _2 = (float) two;
-				return _1 < _2;
-			}
-		}
-
-		//
-		if(one instanceof Float) {
-			float _1 = (float) one;
-			if(two instanceof Integer) {
-				int _2 = (int) two;
-				return _1 < _2;
-			}
-
-			if(two instanceof Double) {
-				double _2 = (double) two;
-				return _1 < _2;
-			}
-
-			if(two instanceof Long) {
-				long _2 = (long) two;
-				return _1 < _2;
-			}
-
-			if(two instanceof Float) {
-				float _2 = (float) two;
-				return _1 < _2;
-			}
-		}
-
-		//
-		if(one instanceof Long) {
-			long _1 = (long) one;
-			if(two instanceof Integer) {
-				int _2 = (int) two;
-				return _1 < _2;
-			}
-
-			if(two instanceof Double) {
-				double _2 = (double) two;
-				return _1 < _2;
-			}
-
-			if(two instanceof Long) {
-				long _2 = (long) two;
-				return _1 < _2;
-			}
-
-			if(two instanceof Float) {
-				float _2 = (float) two;
-				return _1 < _2;
-			}
-		}
-
-		return false; // Shouldn't ever reach. But yay failsafes.
-	}
-
-	private static boolean equal(Object one, Object two) {
-		//
-		if(one instanceof Integer) {
-			int _1 = (int) one;
-			if(two instanceof Integer) {
-				int _2 = (int) two;
-				return _1 == _2;
-			}
-
-			if(two instanceof Double) {
-				double _2 = (double) two;
-				return _1 == _2;
-			}
-
-			if(two instanceof Long) {
-				long _2 = (long) two;
-				return _1 == _2;
-			}
-
-			if(two instanceof Float) {
-				float _2 = (float) two;
-				return _1 == _2;
-			}
-		}
-
-		//
-		if(one instanceof Double) {
-			double _1 = (double) one;
-			if(two instanceof Integer) {
-				int _2 = (int) two;
-				return _1 == _2;
-			}
-
-			if(two instanceof Double) {
-				double _2 = (double) two;
-				return _1 == _2;
-			}
-
-			if(two instanceof Long) {
-				long _2 = (long) two;
-				return _1 == _2;
-			}
-
-			if(two instanceof Float) {
-				float _2 = (float) two;
-				return _1 == _2;
-			}
-		}
-
-		//
-		if(one instanceof Float) {
-			float _1 = (float) one;
-			if(two instanceof Integer) {
-				int _2 = (int) two;
-				return _1 == _2;
-			}
-
-			if(two instanceof Double) {
-				double _2 = (double) two;
-				return _1 == _2;
-			}
-
-			if(two instanceof Long) {
-				long _2 = (long) two;
-				return _1 == _2;
-			}
-
-			if(two instanceof Float) {
-				float _2 = (float) two;
-				return _1 == _2;
-			}
-		}
-
-		//
-		if(one instanceof Long) {
-			long _1 = (long) one;
-			if(two instanceof Integer) {
-				int _2 = (int) two;
-				return _1 == _2;
-			}
-
-			if(two instanceof Double) {
-				double _2 = (double) two;
-				return _1 == _2;
-			}
-
-			if(two instanceof Long) {
-				long _2 = (long) two;
-				return _1 == _2;
-			}
-
-			if(two instanceof Float) {
-				float _2 = (float) two;
-				return _1 == _2;
-			}
-		}
-
-		return false; // Shouldn't ever reach. But yay failsafes.
-	}
-
-
-	private static void check(String str) throws NumberFormatException {
-		int f = 0;
-		int t = 0;
-
-		t++;
-		try {
-			Integer.parseInt(str);
-		} catch(NumberFormatException ignored) {
-			f++;
-		}
-
-		t++;
-		try {
-			Long.parseLong(str);
-		} catch(NumberFormatException ignored) {
-			f++;
-		}
-
-		t++;
-		try {
-			Float.parseFloat(str);
-		} catch(NumberFormatException ignored) {
-			f++;
-		}
-
-		t++;
-		try {
-			Double.parseDouble(str);
-		} catch(NumberFormatException ex) {
-			f++;
-		}
-
-		if(t == f) { // Total is failed. Meaning not a number.
-			throw new NumberFormatException();
-		}
-	}
-
-	private static String combine(String[] args, int start, int end) {
-		return combine(args, start, end, " ");
-	}
-
-	private static String combine(String[] args, int start, int end, CharSequence operator) {
-		end = end == -1 ? args.length : end;
-		start = start == -1 ? 0 : start;
-		StringBuilder res = new StringBuilder();
-		for(int i = start; i < end; i++) {
-			res.append(Tokenisable.trim(args[i])).append(i == end - 1 ? "" : operator);
-		}
-		String ret = res.toString();
-		return ret;
-	}
-
-
-	private static String[] trim(String[] arr) {
-		for(int i = 0; i < arr.length; i++) {
-			arr[i] = Tokenisable.trim(arr[i]);
-		}
-		return arr;
-	}
-
-	private static boolean validate(String conditional) {
-		int open = 0;
-		int closed = 0;
-		for(char c : conditional.toCharArray()) {
-			if(c == '(') {
-				open++;
-			} else if(c == ')') {
-				closed++;
-			}
-		}
-		return open == closed;
-	}
+  private static AtomicInteger integer = new AtomicInteger();
+
+  public static boolean match(String conditional) {
+    integer.incrementAndGet();
+    if (!validate(conditional)) {
+      throw new TokeniserException(conditional + " is not a valid conditional!");
+    }
+    if (!conditional.contains("(") && !conditional.contains(")")) {
+      return handle(conditional, false);
+    } else {
+      int lastIndexOfOpen = -1;
+      int firstIndexOfClosed = conditional.length();
+      for (int i = 0; i < conditional.length(); i++) {
+        if (conditional.charAt(i) == '(') {
+          if (i > lastIndexOfOpen) {
+            lastIndexOfOpen = i;
+          }
+        }
+        if (conditional.charAt(i) == ')') {
+          if (i < firstIndexOfClosed) {
+            firstIndexOfClosed = i;
+          }
+        }
+      }
+      String temp = conditional.substring(lastIndexOfOpen, firstIndexOfClosed + 1);
+      conditional = conditional
+                            .replace(temp, handle(temp.replaceAll("[()]", ""), false) + "");
+      return match(conditional);
+    }
+  }
+
+  public static boolean handle(String part, boolean isFalse) {
+    part = Tokenisable.trim(part);
+    if (part.equals("true") || part.equals("false")) {
+      return isFalse ? part.equals("false") : part.equals("true");
+    } else {
+      if (part.contains("&&")) {
+        return handleAnd(part);
+      }
+      if (part.contains("||")) {
+        return handleOr(part);
+      }
+      String temp;
+      Pattern p = Regex.STRING.compile();
+      Matcher m = p.matcher(part);
+      String replace = "-";
+      while (part.contains(replace)) {
+        replace += "-";
+      }
+      while (m.find()) {
+        String t = m.group();
+        t = t.replaceAll(" ", replace);
+        part = part.replace(m.group(), t);
+      }
+
+      String[] parts = part.split(" ");
+      if (parts.length < 3) {
+        throw new TokeniserException("Invalid conditional! Part: " + part);
+      }
+
+      for (int i = 0; i < parts.length; i++) {
+        parts[i] = parts[i].replace(replace, " ");
+      }
+
+      Type type1 = find(parts[0]);
+      Type type2 = find(parts[2]);
+      if (type1 != type2) {
+        throw new TokeniserException("Invalid conditional! Part: " + part);
+      }
+      temp = parts[0] + " " + parts[1] + " " + parts[2];
+      boolean bool;
+      final boolean not = false;
+
+      switch (type1) {
+        case INT:
+        case LONG:
+        case DOUBLE:
+        case FLOAT:
+          bool = handleNumbers(temp);
+          break;
+        case CHAR:
+          bool = handleChars(temp);
+          break;
+        case STRING:
+          bool = handleStrings(temp);
+          break;
+        default:
+          throw new TokeniserException("Invalid conditional! Part: " + part);
+      }
+      return handle(part.replaceFirst(temp, Boolean.toString(bool)), not);
+    }
+  }
+
+
+  public static boolean handleChars(String str) {
+    str = str.replace("' '", "'--'");
+    String[] arr = str.split("\\s+");
+    for (int i = 0; i < arr.length; i++) {
+      arr[i] = arr[i].replace("'--'", "' '");
+    }
+    switch (arr[1]) {
+      case "==":
+        return arr[0].charAt(1) == arr[2].charAt(1);
+      case "!=":
+        return arr[0].charAt(1) != arr[2].charAt(1);
+      default:
+        throw new TokeniserException("Invalid conditional: " + str);
+    }
+  }
+
+  public static boolean handleStrings(String str) {
+    String replace = "-";
+    while (str.contains(replace)) {
+      replace += "-";
+    }
+
+    Matcher matcher = Regex.STRING.compile().matcher(str);
+    List<String> list = new ArrayList<>();
+    while (matcher.find()) {
+      list.add(matcher.group());
+    }
+    for (String string : list) {
+      str = str.replace(string, string.replace("\\s", replace));
+    }
+
+    String[] arr = str.split("\\s+");
+    for (int i = 0; i < arr.length; i++) {
+      arr[i] = arr[i].replace(replace, " ");
+    }
+    if (arr.length != 3) {
+      throw new TokeniserException("Invalid conditional: " + str);
+    }
+
+    switch (arr[1]) {
+      case "==":
+        return arr[0].equals(arr[2]);
+      case "!=":
+        return !arr[0].equals(arr[2]);
+      case "===":
+        return arr[0].equalsIgnoreCase(arr[2]);
+      default:
+        throw new TokeniserException("Invalid conditional: " + str);
+    }
+  }
+
+  public static boolean handleOr(String str) {
+    if (str.equals("true") || str.equals("false")) {
+      return str.equals("true");
+    }
+    String[] arr = trim(str.split("\\|\\|"));
+    if (arr.length == 2) {
+      if (!arr[0].equals("true") && !arr[0].equals("false")) {
+        arr[0] = handle(arr[0], false) + "";
+      }
+      if (!arr[1].equals("true") && !arr[1].equals("false")) {
+        arr[1] = handle(arr[1], false) + "";
+      }
+
+      return arr[0].equals("true") || arr[1].equals("true");
+
+    } else {
+      String first = handleOr(combine(arr, 0, 2, "||")) + "";
+      String second = combine(arr, 2, arr.length, "||");
+      return handleOr(first + (!second.isEmpty() ? "||" : "") + second);
+    }
+  }
+
+  public static boolean handleAnd(String str) {
+    if (str.equals("true") || str.equals("false")) {
+      return str.equals("true");
+    }
+    String[] arr = trim(str.split("&&"));
+    if (arr.length == 2) {
+      if (!arr[0].equals("true") && !arr[0].equals("false")) {
+        arr[0] = handle(arr[0], false) + "";
+      }
+      if (!arr[1].equals("true") && !arr[1].equals("false")) {
+        arr[1] = handle(arr[1], false) + "";
+      }
+
+      return arr[0].equals("true") && arr[1].equals("true");
+
+    } else {
+      String first = handleAnd(combine(arr, 0, 2, "&&")) + "";
+      String second = combine(arr, 2, arr.length, "&&");
+      return handleAnd(first + (!second.isEmpty() ? "&&" : "") + second);
+    }
+  }
+
+
+  public static boolean handleNumbers(String str) {
+    boolean bool;
+    String[] arr = str.split("\\s+");
+    if (arr.length != 3) {
+      throw new TokeniserException("Invalid conditional: " + str);
+    }
+    try {
+      check(arr[0]);
+      check(arr[2]);
+    } catch (NumberFormatException ex) {
+      throw new TokeniserException("Invalid conditional: " + str);
+    }
+    switch (arr[1]) {
+      case "<":
+        bool = lessThan(convert(arr[0]), convert(arr[2]));
+        break;
+      case ">":
+        bool = !lessThan(convert(arr[0]), convert(arr[2]));
+        break;
+      case "==":
+        bool = equal(convert(arr[0]), convert(arr[2]));
+        break;
+      case "!=":
+        bool = !equal(convert(arr[0]), convert(arr[2]));
+        break;
+      case "<=":
+        bool =
+                equal(convert(arr[0]), convert(arr[2])) || lessThan(convert(arr[0]), convert(arr[2]));
+        break;
+      case ">=":
+        bool =
+                equal(convert(arr[0]), convert(arr[2])) || !lessThan(convert(arr[0]), convert(arr[2]));
+        break;
+      default:
+        throw new TokeniserException("Invalid conditional: " + str);
+    }
+    return bool;
+  }
+
+  private static Type find(String str) {
+    if (str.matches(Regex.FLOAT.getRegex())) {
+      return Type.FLOAT;
+    } else if (str.matches(Regex.DOUBLE.getRegex())) {
+      return Type.DOUBLE;
+    } else if (str.matches(Regex.LONG.getRegex())) {
+      return Type.LONG;
+    } else if (str.matches(Regex.INT.getRegex())) {
+      return Type.INT;
+    } else if (str.matches(Regex.CHAR.getRegex())) {
+      return Type.CHAR;
+    } else if (str.matches(Regex.STRING.getRegex())) {
+      return Type.STRING;
+    } else {
+      return null;
+    }
+  }
+
+
+  private static Object convert(String str) {
+    if (str.matches(Regex.FLOAT.getRegex())) {
+      return Float.parseFloat(str.replaceAll("[fF]", ""));
+    } else if (str.matches(Regex.DOUBLE.getRegex())) {
+      return Double.parseDouble(str.replaceAll("[dD]", ""));
+    } else if (str.matches(Regex.LONG.getRegex())) {
+      return Long.parseLong(str.replaceAll("[lL]", ""));
+    } else if (str.matches(Regex.INT.getRegex())) {
+      return Integer.parseInt(str);
+    } else if (str.matches(Regex.CHAR.getRegex())) {
+      return str.charAt(1);
+    } else if (str.matches(Regex.STRING.getRegex())) {
+      return str;
+    } else {
+      throw new TokeniserException("");
+    }
+  }
+
+  private static boolean lessThan(Object one, Object two) {
+    //
+    if (one instanceof Integer) {
+      int _1 = (int) one;
+      if (two instanceof Integer) {
+        int _2 = (int) two;
+        return _1 < _2;
+      }
+
+      if (two instanceof Double) {
+        double _2 = (double) two;
+        return _1 < _2;
+      }
+
+      if (two instanceof Long) {
+        long _2 = (long) two;
+        return _1 < _2;
+      }
+
+      if (two instanceof Float) {
+        float _2 = (float) two;
+        return _1 < _2;
+      }
+    }
+
+    //
+    if (one instanceof Double) {
+      double _1 = (double) one;
+      if (two instanceof Integer) {
+        int _2 = (int) two;
+        return _1 < _2;
+      }
+
+      if (two instanceof Double) {
+        double _2 = (double) two;
+        return _1 < _2;
+      }
+
+      if (two instanceof Long) {
+        long _2 = (long) two;
+        return _1 < _2;
+      }
+
+      if (two instanceof Float) {
+        float _2 = (float) two;
+        return _1 < _2;
+      }
+    }
+
+    //
+    if (one instanceof Float) {
+      float _1 = (float) one;
+      if (two instanceof Integer) {
+        int _2 = (int) two;
+        return _1 < _2;
+      }
+
+      if (two instanceof Double) {
+        double _2 = (double) two;
+        return _1 < _2;
+      }
+
+      if (two instanceof Long) {
+        long _2 = (long) two;
+        return _1 < _2;
+      }
+
+      if (two instanceof Float) {
+        float _2 = (float) two;
+        return _1 < _2;
+      }
+    }
+
+    //
+    if (one instanceof Long) {
+      long _1 = (long) one;
+      if (two instanceof Integer) {
+        int _2 = (int) two;
+        return _1 < _2;
+      }
+
+      if (two instanceof Double) {
+        double _2 = (double) two;
+        return _1 < _2;
+      }
+
+      if (two instanceof Long) {
+        long _2 = (long) two;
+        return _1 < _2;
+      }
+
+      if (two instanceof Float) {
+        float _2 = (float) two;
+        return _1 < _2;
+      }
+    }
+
+    return false; // Shouldn't ever reach. But yay failsafes.
+  }
+
+  private static boolean equal(Object one, Object two) {
+    //
+    if (one instanceof Integer) {
+      int _1 = (int) one;
+      if (two instanceof Integer) {
+        int _2 = (int) two;
+        return _1 == _2;
+      }
+
+      if (two instanceof Double) {
+        double _2 = (double) two;
+        return _1 == _2;
+      }
+
+      if (two instanceof Long) {
+        long _2 = (long) two;
+        return _1 == _2;
+      }
+
+      if (two instanceof Float) {
+        float _2 = (float) two;
+        return _1 == _2;
+      }
+    }
+
+    //
+    if (one instanceof Double) {
+      double _1 = (double) one;
+      if (two instanceof Integer) {
+        int _2 = (int) two;
+        return _1 == _2;
+      }
+
+      if (two instanceof Double) {
+        double _2 = (double) two;
+        return _1 == _2;
+      }
+
+      if (two instanceof Long) {
+        long _2 = (long) two;
+        return _1 == _2;
+      }
+
+      if (two instanceof Float) {
+        float _2 = (float) two;
+        return _1 == _2;
+      }
+    }
+
+    //
+    if (one instanceof Float) {
+      float _1 = (float) one;
+      if (two instanceof Integer) {
+        int _2 = (int) two;
+        return _1 == _2;
+      }
+
+      if (two instanceof Double) {
+        double _2 = (double) two;
+        return _1 == _2;
+      }
+
+      if (two instanceof Long) {
+        long _2 = (long) two;
+        return _1 == _2;
+      }
+
+      if (two instanceof Float) {
+        float _2 = (float) two;
+        return _1 == _2;
+      }
+    }
+
+    //
+    if (one instanceof Long) {
+      long _1 = (long) one;
+      if (two instanceof Integer) {
+        int _2 = (int) two;
+        return _1 == _2;
+      }
+
+      if (two instanceof Double) {
+        double _2 = (double) two;
+        return _1 == _2;
+      }
+
+      if (two instanceof Long) {
+        long _2 = (long) two;
+        return _1 == _2;
+      }
+
+      if (two instanceof Float) {
+        float _2 = (float) two;
+        return _1 == _2;
+      }
+    }
+
+    return false; // Shouldn't ever reach. But yay failsafes.
+  }
+
+
+  private static void check(String str) throws NumberFormatException {
+    int f = 0;
+    int t = 0;
+
+    t++;
+    try {
+      Integer.parseInt(str);
+    } catch (NumberFormatException ignored) {
+      f++;
+    }
+
+    t++;
+    try {
+      Long.parseLong(str);
+    } catch (NumberFormatException ignored) {
+      f++;
+    }
+
+    t++;
+    try {
+      Float.parseFloat(str);
+    } catch (NumberFormatException ignored) {
+      f++;
+    }
+
+    t++;
+    try {
+      Double.parseDouble(str);
+    } catch (NumberFormatException ex) {
+      f++;
+    }
+
+    if (t == f) { // Total is failed. Meaning not a number.
+      throw new NumberFormatException();
+    }
+  }
+
+  private static String combine(String[] args, int start, int end) {
+    return combine(args, start, end, " ");
+  }
+
+  private static String combine(String[] args, int start, int end, CharSequence operator) {
+    end = end == -1 ? args.length : end;
+    start = start == -1 ? 0 : start;
+    StringBuilder res = new StringBuilder();
+    for (int i = start; i < end; i++) {
+      res.append(Tokenisable.trim(args[i])).append(i == end - 1 ? "" : operator);
+    }
+    String ret = res.toString();
+    return ret;
+  }
+
+
+  private static String[] trim(String[] arr) {
+    for (int i = 0; i < arr.length; i++) {
+      arr[i] = Tokenisable.trim(arr[i]);
+    }
+    return arr;
+  }
+
+  private static boolean validate(String conditional) {
+    int open = 0;
+    int closed = 0;
+    for (char c : conditional.toCharArray()) {
+      if (c == '(') {
+        open++;
+      } else if (c == ')') {
+        closed++;
+      }
+    }
+    return open == closed;
+  }
 }
